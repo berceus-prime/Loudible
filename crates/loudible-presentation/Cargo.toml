@@ -1,0 +1,14 @@
+[package]
+name = "loudible-presentation"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+loudible-core = { path = "../loudible-core" }
+tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+loudible-test-support = { path = "../loudible-test-support" }
+tokio-util = "0.7"

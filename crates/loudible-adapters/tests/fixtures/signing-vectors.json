@@ -1,0 +1,8 @@
+{
+  "_comment": "Expected RSA PKCS#1 v1.5 SHA-256 signatures produced independently with 'openssl dgst -sha256 -sign synthetic-device-key.pem'. The key is synthetic test data.",
+  "adp_token": "{enc:synthetic-adp-token}",
+  "vectors": [
+    {"method": "GET", "path": "/1.0/library?num_results=50&page=1", "timestamp": "2027-01-15T08:00:00.000000Z", "body": "", "signature": "TP0BFKmhE+p3L/hxyXmpkoyDJX4B5sGbL8vnK3EsIZi5TlhdroyOa7SayqV9hvEHXtmQMxnjKEs+VxKnVEAFnAFzeSGN3tSTtIDCndE31DHk7QzAXSY5gwZrSjxKCJ+4Nyko63uUHMffUvMYExPifC/VQ3F0JFOC/O/5+/6NIRWuynWDe0LFdi0uFSTxmT2IrPrRTjmD23mNwvHsMY65ko0fVEC4EVItaCvXjurLWDgIdpXT8yPNvtSOHKTHfXrrjHWA/2ivfvCBDcPUjJXpeVYaA0Yq0b3zokCT4hsFAfJifjzcnyfwpbnvSzhoBpaf6l1wKpQNer8LXRW45Z3MWQ=="},
+    {"method": "POST", "path": "/1.0/content/B000000001/licenserequest", "timestamp": "2027-01-15T08:00:00.123456Z", "body": "{\"a\":1}", "signature": "hIAbDV1O0mSQl+QnF4av/TaXR7L0uD1BXiRupQJGE6JgSH9PJAVzMvhaLztVjAXeRGzn+TKmthddGWzrke+PNNEz5LCHTnAwkNVMYA1QZKwIjQGVQaIpwL/CC/2zhEhRlAZPcifwJcHbiU8+xSarxNxyWgW+15L88VIbGRzDFu2f43E1NWPYu3WjQXzbm2ecHXI4Wu7XveHMor5pNuq9bBN4Ki6f2aZOMt1f+vWnrw6pgG1AxQy+XFbC1k4P0XgZgU+cP4HAIoxfTpbnLMNiU0OzNgHUcGWfntOaY/p7DOzq5Z0Rflx01avvITBdDgw9nDi5df65jfw3EYy4Vr0BKQ=="}
+  ]
+}

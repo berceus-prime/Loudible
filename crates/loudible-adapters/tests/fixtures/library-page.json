@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "asin": "B000000001",
+      "title": "The Synthetic Novel",
+      "subtitle": "A Test Fixture",
+      "authors": [{"asin": "A1", "name": "Ada Author"}, {"name": "Bea Coauthor"}],
+      "narrators": [{"name": "Nora Narrator"}],
+      "series": [{"asin": "S1", "title": "Fixture Saga", "sequence": "1"}],
+      "publisher_name": "Example Audio",
+      "runtime_length_min": 754,
+      "release_date": "2021-03-04",
+      "purchase_date": "2022-05-06T07:08:09.123Z",
+      "product_images": {"500": "https://m.media-amazon.example/images/I/synthetic._SL500_.jpg"},
+      "content_delivery_type": "SinglePartBook",
+      "content_type": "Product",
+      "is_ayce": false,
+      "relationships": [{"asin": "S1", "relationship_to_product": "parent", "relationship_type": "series", "sequence": "1"}]
+    },
+    {
+      "asin": "B000000002",
+      "title": "Minimal Book"
+    },
+    {
+      "asin": "B000000003",
+      "title": "Plus Catalog Title",
+      "content_delivery_type": "SinglePartBook",
+      "content_type": "Product",
+      "is_ayce": true,
+      "authors": null,
+      "narrators": []
+    },
+    {
+      "asin": "B000000004",
+      "title": "Synthetic Podcast",
+      "content_delivery_type": "PodcastParent",
+      "content_type": "Podcast",
+      "relationships": [{"asin": "B000000005", "relationship_to_product": "child", "relationship_type": "episode"}]
+    },
+    {
+      "asin": "B000000005",
+      "title": "Episode 1",
+      "content_delivery_type": "PodcastEpisode",
+      "content_type": "Podcast",
+      "relationships": [{"asin": "B000000004", "relationship_to_product": "parent", "relationship_type": "episode"}]
+    },
+    {
+      "title": "Item without ASIN"
+    },
+    {
+      "asin": "B000000006",
+      "title": "",
+      "content_delivery_type": "MultiPartBook",
+      "content_type": "Product",
+      "is_ayce": "false",
+      "runtime_length_min": "120",
+      "purchase_date": "2022-05-06T07:08:09Z",
+      "relationships": [{"asin": "B000000007", "relationship_to_product": "child", "relationship_type": "component"}]
+    }
+  ],
+  "response_groups": ["always-returned", "contributors", "media", "product_attrs", "relationships", "series"]
+}

@@ -1,0 +1,64 @@
+{
+  "content_license": {
+    "acr": "CR!SYNTHETIC",
+    "asin": "B000000002",
+    "drm_type": "Adrm",
+    "status_code": "Granted",
+    "license_response": "j9HtxxiWdIajjxv+sTB2ujWXM3xRLRJQi2YaMRkgsmf73AjDZlws4HsssDX5a4+eDE5P79gXRUVFbScJR3u9/Q==",
+    "content_metadata": {
+      "content_url": {
+        "offline_url": "https://cds.audible.example/download/B000000002.aaxc?token=synthetic"
+      },
+      "content_reference": {
+        "asin": "B000000002",
+        "codec": "mp4a.40.2",
+        "content_format": "AAX_44_128",
+        "content_size_in_bytes": 123456
+      },
+      "chapter_info": {
+        "brandIntroDurationMs": 2043,
+        "brandOutroDurationMs": 5061,
+        "is_accurate": true,
+        "runtime_length_ms": 185000,
+        "chapters": [
+          {
+            "title": "Opening Credits",
+            "start_offset_ms": 0,
+            "length_ms": 15000
+          },
+          {
+            "title": "Part One",
+            "start_offset_ms": 15000,
+            "length_ms": 5000,
+            "chapters": [
+              {
+                "title": "Chapter 1",
+                "start_offset_ms": 20000,
+                "length_ms": 60000
+              },
+              {
+                "title": "Chapter 2",
+                "start_offset_ms": 80000,
+                "length_ms": 60000
+              }
+            ]
+          },
+          {
+            "title": "Part Two",
+            "start_offset_ms": 140000,
+            "length_ms": 0,
+            "chapters": [
+              {
+                "title": "Chapter 3",
+                "start_offset_ms": 140000,
+                "length_ms": 45000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "message": "Eligibility details: synthetic",
+    "request_id": "00000000-0000-0000-0000-000000000003"
+  }
+}

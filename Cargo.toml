@@ -1,0 +1,46 @@
+[workspace]
+members = [".", "crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[package]
+name = "skia-ui"
+version.workspace = true
+edition.workspace = true
+default-run = "skia-ui"
+
+[dependencies]
+arboard = "3"
+directories = "6"
+futures = "0.3"
+loudible-adapters = { path = "crates/loudible-adapters" }
+loudible-core = { path = "crates/loudible-core" }
+loudible-ffmpeg = { path = "crates/loudible-ffmpeg" }
+loudible-presentation = { path = "crates/loudible-presentation" }
+opener = { version = "0.8", features = ["reveal"] }
+skia-safe = { version = "0.157", features = ["textlayout"] }
+softbuffer = "0.4"
+tokio = { version = "1", features = ["macros", "rt", "sync"] }
+url = "2"
+uuid = "1"
+winit = "0.30"
+
+# Linux needs GTK alongside winit, so it uses the browser-and-paste fallback for now.
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+wry = "0.57"
+
+# Stores sign-in cookies through WebKit directly; see `webview.rs`.
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSMenu", "NSMenuItem", "NSResponder", "NSEvent", "NSWindow", "NSView"] }
+objc2-foundation = { version = "0.3", features = ["NSDictionary", "NSHTTPCookie", "NSString", "NSURL", "NSURLRequest"] }
+objc2-web-kit = { version = "0.3", features = ["block2", "WKHTTPCookieStore", "WKNavigation", "WKWebView", "WKWebViewConfiguration", "WKWebsiteDataStore"] }
+
+[dev-dependencies]
+async-trait = "0.1"
+loudible-test-support = { path = "crates/loudible-test-support" }
+

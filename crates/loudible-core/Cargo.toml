@@ -1,0 +1,27 @@
+[package]
+name = "loudible-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+base64 = "0.22"
+caseless = "0.2"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+futures = "0.3"
+loudible-scheduling = { path = "../loudible-scheduling" }
+percent-encoding = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
+tokio-util = "0.7"
+trash = "5"
+unicode-normalization = "0.1"
+unicode-properties = { version = "0.1", default-features = false, features = ["general-category"] }
+unicode-segmentation = "1"
+url = { version = "2", features = ["serde"] }
+uuid = { version = "1", features = ["serde", "v4"] }
+
+[dev-dependencies]
+loudible-test-support = { path = "../loudible-test-support" }

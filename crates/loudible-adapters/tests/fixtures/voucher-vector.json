@@ -1,0 +1,7 @@
+{
+  "voucher_base64": "qKFh1L13arhrG1Mkqf52EYaguuNpa8odnNDdySSvDpvY55z9eJt8ylMpJ3HQs/n4m4DoqscU2X+kZIkqQ+E0LVOPiPNBEI9qJmxg06yMQKdljgBWUE0cJn2m5+osi1lb3r+t4GpTuYjO9k6/TxuOY/1mv3QbI8i6WL2xqDRrbL1HqghdrRW14DauuArJF3SqTxNySQmvjCyxOOgxpqW83jlqoZV4Fl2f455fNQyith0nCy4dsB93cyjwHTXjr9FMMHLMTIol+gKhe9kbCQ2ONSP/rYFLjj5oehtRlrxwDrwnYvqPUqKag5gGIk+2Wl2nrRhKwYUMg5EXlKzs4cemK63SofR9pRD8sMaOrTh+Klr7sQgnOdMgePbPb1mLyM/N",
+  "asin": "B000000001",
+  "derived_key": "e37fa89dbbf6ee988cb963062febe280",
+  "derived_iv": "0c348fd8207a4aef66808b6991a3d418",
+  "_comment": "Derived key/IV computed with Python hashlib; ciphertext produced by 'openssl enc -aes-128-cbc -nopad'. Synthetic data."
+}

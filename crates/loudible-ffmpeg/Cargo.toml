@@ -1,0 +1,18 @@
+[package]
+name = "loudible-ffmpeg"
+version.workspace = true
+edition.workspace = true
+build = "build.rs"
+
+[dependencies]
+async-trait = "0.1"
+loudible-core = { path = "../loudible-core" }
+tokio = { version = "1", features = ["sync"] }
+tokio-util = "0.7"
+
+[build-dependencies]
+cc = "1"
+
+[dev-dependencies]
+loudible-test-support = { path = "../loudible-test-support" }
+tokio = { version = "1", features = ["macros", "rt"] }

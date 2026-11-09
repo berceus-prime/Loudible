@@ -1,0 +1,9 @@
+/target
+
+# Packaged apps from Scripts/build-app.sh and Scripts/package.sh
+/build
+
+# FFmpeg source tarball and LGPL build from Scripts/build-ffmpeg.sh (re-created on demand)
+/Vendor
+
+.DS_Store

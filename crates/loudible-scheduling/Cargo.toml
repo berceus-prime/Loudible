@@ -1,0 +1,4 @@
+[package]
+name = "loudible-scheduling"
+version.workspace = true
+edition.workspace = true

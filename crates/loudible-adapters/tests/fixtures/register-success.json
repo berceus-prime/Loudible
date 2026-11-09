@@ -1,0 +1,35 @@
+{
+  "response": {
+    "success": {
+      "extensions": {
+        "device_info": {
+          "device_name": "Test's Audible for iPhone",
+          "device_serial_number": "0123456789ABCDEF0123456789ABCDEF",
+          "device_type": "A2CZJZGLK2JJVM"
+        },
+        "customer_info": {
+          "account_pool": "Amazon",
+          "user_id": "amzn1.account.SYNTHETIC",
+          "home_region": "NA",
+          "name": "Test User",
+          "given_name": "Test"
+        }
+      },
+      "tokens": {
+        "website_cookies": [{"Name": "session-id", "Value": "000-0000000-0000000"}],
+        "store_authentication_cookie": {"cookie": "synthetic"},
+        "mac_dms": {
+          "device_private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIsynthetic\n-----END RSA PRIVATE KEY-----\n",
+          "adp_token": "{enc:synthetic-adp}{key:synthetic}{iv:synthetic}{name:QURQVG9rZW5FbmNyeXB0aW9uS2V5}{serial:Mg==}"
+        },
+        "bearer": {
+          "access_token": "Atna|synthetic-access",
+          "refresh_token": "Atnr|synthetic-refresh",
+          "expires_in": "3600"
+        }
+      },
+      "customer_id": "amzn1.account.SYNTHETIC"
+    }
+  },
+  "request_id": "00000000-0000-0000-0000-000000000000"
+}
