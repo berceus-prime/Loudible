@@ -17,11 +17,10 @@ fn running(phase: Phase, progress: f64) -> JobState {
 fn resolve(
     jobs: &[ExportJob],
     failure: Option<(JobKind, &str)>,
-    partial: Option<TransferProgress>,
     downloaded: bool,
     exported: bool,
 ) -> BookStatus {
-    BookStatus::resolve("B1", jobs, failure, partial, downloaded, exported)
+    BookStatus::resolve("B1", jobs, failure, downloaded, exported)
 }
 
 const X: Option<(JobKind, &str)> = Some((JobKind::Download, "x"));
@@ -31,7 +30,7 @@ fn priority_running_queued_failed_exported_downloaded() {
     let run = job(JobKind::Export, vec![running(Phase::Converting, 0.0)], "B1");
     let queued = job(JobKind::Download, vec![], "B1");
     assert_eq!(
-        resolve(&[queued.clone(), run], X, None, true, true),
+        resolve(&[queued.clone(), run], X, true, true),
         BookStatus::Running {
             kind: JobKind::Export,
             progress: 0.0,
@@ -39,64 +38,19 @@ fn priority_running_queued_failed_exported_downloaded() {
         }
     );
     assert_eq!(
-        resolve(&[queued], X, None, true, true),
+        resolve(&[queued], X, true, true),
         BookStatus::Queued(JobKind::Download)
     );
     assert_eq!(
-        resolve(&[], X, None, true, true),
+        resolve(&[], X, true, true),
         BookStatus::Failed {
             kind: JobKind::Download,
             message: "x".into(),
-            kept: None
         }
     );
-    assert_eq!(resolve(&[], None, None, true, true), BookStatus::Exported);
-    assert_eq!(
-        resolve(&[], None, None, true, false),
-        BookStatus::Downloaded
-    );
-    assert_eq!(resolve(&[], None, None, false, false), BookStatus::None);
-}
-
-#[test]
-fn kept_bytes_show_with_a_failure_or_as_paused() {
-    let bytes = TransferProgress::new(3, 10);
-    let kept = Some(bytes);
-    let run = job(
-        JobKind::Download,
-        vec![running(Phase::Downloading, 0.3)],
-        "B1",
-    );
-    assert_eq!(
-        resolve(std::slice::from_ref(&run), X, kept, false, false),
-        BookStatus::Running {
-            kind: JobKind::Download,
-            progress: run.fraction_completed(),
-            transferred: None
-        }
-    );
-    assert_eq!(
-        resolve(
-            &[job(JobKind::Download, vec![], "B1")],
-            None,
-            kept,
-            false,
-            false
-        ),
-        BookStatus::Queued(JobKind::Download)
-    );
-    assert_eq!(
-        resolve(&[], Some((JobKind::Export, "x")), kept, false, true),
-        BookStatus::Failed {
-            kind: JobKind::Export,
-            message: "x".into(),
-            kept
-        }
-    );
-    assert_eq!(
-        resolve(&[], None, kept, false, true),
-        BookStatus::Paused(bytes)
-    );
+    assert_eq!(resolve(&[], None, true, true), BookStatus::Exported);
+    assert_eq!(resolve(&[], None, true, false), BookStatus::Downloaded);
+    assert_eq!(resolve(&[], None, false, false), BookStatus::None);
 }
 
 #[test]
@@ -112,7 +66,7 @@ fn ignores_finished_jobs_and_other_books() {
         "B2",
     );
     assert_eq!(
-        resolve(&[finished, other], None, None, true, false),
+        resolve(&[finished, other], None, true, false),
         BookStatus::Downloaded
     );
 }
@@ -125,7 +79,7 @@ fn paused_for_sign_in_shows_as_queued() {
         "B1",
     );
     assert_eq!(
-        resolve(&[waiting], None, None, false, false),
+        resolve(&[waiting], None, false, false),
         BookStatus::Queued(JobKind::Download)
     );
 }
@@ -176,39 +130,6 @@ fn not_downloaded_offers_download_and_export() {
         ),
         []
     );
-}
-
-#[test]
-fn kept_bytes_offer_resume_and_discard() {
-    let partial = BookMenuContext {
-        has_partial_download: true,
-        ..context()
-    };
-    assert_eq!(
-        actions(&[], partial),
-        [A::ResumeDownload, A::Export, A::DeleteDownload]
-    );
-    // Out of the library: nothing to resume, but the bytes can still be discarded.
-    assert_eq!(
-        actions(
-            &[],
-            BookMenuContext {
-                is_in_library: false,
-                ..partial
-            }
-        ),
-        [A::DeleteDownload]
-    );
-    let run = job(
-        JobKind::Download,
-        vec![running(Phase::Downloading, 0.3)],
-        "B1",
-    );
-    let cancel = A::Cancel {
-        job_id: run.id,
-        kind: JobKind::Download,
-    };
-    assert_eq!(actions(&[run], partial), [cancel]);
 }
 
 #[test]

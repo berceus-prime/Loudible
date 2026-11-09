@@ -147,10 +147,27 @@ async fn keeps_plus_signs_in_authorization_codes() {
     });
     let auth = f.coordinator();
     auth.begin_login(US).unwrap();
-    auth.complete_login(&callback_url(US, "a+b%2Fc"))
+    auth.complete_login(&callback_url(US, "a+b/c"))
         .await
         .unwrap();
     assert_eq!(received.current(), "a+b/c");
+}
+
+#[tokio::test]
+async fn keeps_reserved_characters_in_authorization_codes() {
+    let f = Fixture::new();
+    let received = Arc::new(Locked::new(String::new()));
+    let record = received.clone();
+    f.api.on_register(move |_, code| {
+        record.set(code);
+        async { Ok(session()) }
+    });
+    let auth = f.coordinator();
+    auth.begin_login(US).unwrap();
+    auth.complete_login(&callback_url(US, "a+b/c%d&e=f"))
+        .await
+        .unwrap();
+    assert_eq!(received.current(), "a+b/c%d&e=f");
 }
 
 #[tokio::test]

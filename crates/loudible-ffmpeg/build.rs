@@ -1,10 +1,8 @@
-//! Compiles the C bridge against the FFmpeg built by `Scripts/build-ffmpeg.sh`. Platforms without
-//! that build yet compile this crate empty, so the rest of the workspace still builds there.
+//! Compiles the C bridge against the FFmpeg built by `Scripts/build-ffmpeg.sh`.
 
 use std::{env, path::PathBuf};
 
 fn main() {
-    println!("cargo::rustc-check-cfg=cfg(has_ffmpeg)");
     println!("cargo::rerun-if-env-changed=LOUDIBLE_FFMPEG_DIR");
 
     let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("set by Cargo"));
@@ -17,11 +15,27 @@ fn main() {
     println!("cargo::rerun-if-changed={}", ffmpeg.join("lib").display());
 
     if !ffmpeg.join("include/libavformat/avformat.h").is_file() {
-        println!(
-            "cargo::warning=no FFmpeg at {}; building without the bridge",
+        panic!(
+            "FFmpeg headers missing at {}. Run Scripts/build-ffmpeg.sh or set LOUDIBLE_FFMPEG_DIR.",
             ffmpeg.display()
         );
-        return;
+    }
+    for library in ["avformat", "avcodec", "avutil"] {
+        let found = std::fs::read_dir(ffmpeg.join("lib"))
+            .into_iter()
+            .flatten()
+            .filter_map(Result::ok)
+            .any(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(&format!("lib{library}."))
+            });
+        assert!(
+            found,
+            "FFmpeg {library} library missing at {}. Run Scripts/build-ffmpeg.sh or set LOUDIBLE_FFMPEG_DIR.",
+            ffmpeg.display()
+        );
     }
 
     cc::Build::new()
@@ -41,5 +55,4 @@ fn main() {
     for library in ["avformat", "avcodec", "avutil"] {
         println!("cargo::rustc-link-lib=dylib={library}");
     }
-    println!("cargo::rustc-cfg=has_ffmpeg");
 }

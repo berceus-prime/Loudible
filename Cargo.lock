@@ -2362,6 +2362,7 @@ dependencies = [
  "reqwest",
  "ring",
  "rustls",
+ "rustls-pki-types",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -2381,7 +2382,6 @@ dependencies = [
  "caseless",
  "chrono",
  "futures",
- "loudible-scheduling",
  "loudible-test-support",
  "percent-encoding",
  "serde",
@@ -2420,10 +2420,6 @@ dependencies = [
  "url",
  "uuid",
 ]
-
-[[package]]
-name = "loudible-scheduling"
-version = "0.1.0"
 
 [[package]]
 name = "loudible-test-support"

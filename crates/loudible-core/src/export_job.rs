@@ -111,14 +111,6 @@ impl ExportJob {
         Ok(())
     }
 
-    /// Only an identified new transfer attempt may reset progress within downloading.
-    pub(crate) fn restart_download(&mut self) {
-        if matches!(self.state, JobState::Running(Phase::Downloading, _)) {
-            self.state = JobState::Running(Phase::Downloading, 0.0);
-            self.transferred = None;
-        }
-    }
-
     fn allows(old: &JobState, new: &JobState) -> bool {
         use JobState::*;
         match (old, new) {

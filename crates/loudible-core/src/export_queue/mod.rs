@@ -5,14 +5,8 @@
 //! - An **export** converts the kept file to M4B. A book that is not downloaded yet is downloaded
 //!   first, exactly as a download job would, and the file is kept.
 //!
-//! Jobs for one book run strictly in the order they were queued; up to `maximum_concurrent_books`
-//! different books run at once. Work can be added while jobs run. A failed job does not stop the
-//! others, and finished files are never touched again. When Audible requires a new sign-in, the
-//! affected jobs pause until `resume_after_authentication()` or `cancel()`, and no new job starts
-//! meanwhile.
-//!
-//! Failed or suspended downloads keep a `PartialDownload` recovery record; explicit cancellation
-//! deletes it. Resumption is best effort, with a fresh download as fallback.
+//! One job runs at a time in queue order. Work can be added while it runs. A failed job does not
+//! stop the next one. A job needing sign-in holds the queue until resumed or cancelled.
 
 pub mod book_export_workflow;
 pub mod download_workflow;
@@ -21,11 +15,10 @@ pub mod file_finalizer;
 pub mod license_provider;
 pub mod state;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use loudible_scheduling::KeyedScheduler;
 use tokio::sync::{oneshot, watch};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -67,12 +60,11 @@ impl Snapshot {
 }
 
 struct Core {
-    scheduler: KeyedScheduler<Uuid, String>,
+    pending: VecDeque<Uuid>,
     state: ExportQueueState,
-    running: HashMap<Uuid, CancellationToken>,
+    running: Option<(Uuid, CancellationToken)>,
     export_destinations: HashMap<Uuid, PathBuf>,
-    authentication_waiters: HashMap<Uuid, oneshot::Sender<()>>,
-    suspended: HashSet<Uuid>,
+    authentication_waiter: Option<oneshot::Sender<()>>,
     finish_waiters: Vec<oneshot::Sender<()>>,
 }
 
@@ -89,15 +81,12 @@ struct Inner {
 pub struct ExportQueue(Arc<Inner>);
 
 impl ExportQueue {
-    pub const DEFAULT_MAXIMUM_CONCURRENT_BOOKS: usize = 3;
-
     pub fn new(
         auth: AuthenticationCoordinator,
         api: Arc<dyn AudibleApi>,
         downloader: Arc<dyn FileDownloader>,
         converter: Arc<dyn AudioConverter>,
         downloads: LocalDownloads,
-        maximum_concurrent_books: usize,
     ) -> Self {
         let finalizer = ExportFileFinalizer;
         let download = DownloadWorkflow {
@@ -116,12 +105,11 @@ impl ExportQueue {
             download,
             exporter,
             core: Mutex::new(Core {
-                scheduler: KeyedScheduler::new(maximum_concurrent_books),
+                pending: VecDeque::new(),
                 state: ExportQueueState::default(),
-                running: HashMap::new(),
+                running: None,
                 export_destinations: HashMap::new(),
-                authentication_waiters: HashMap::new(),
-                suspended: HashSet::new(),
+                authentication_waiter: None,
                 finish_waiters: Vec::new(),
             }),
         }))
@@ -202,7 +190,7 @@ impl ExportQueue {
                 let job = ExportJob::new(book.clone(), kind);
                 let id = job.id;
                 core.state.snapshot.jobs.push(job);
-                core.scheduler.enqueue(id, book.asin.clone());
+                core.pending.push_back(id);
                 if let (JobKind::Export, Some(destination)) = (kind, export_destination) {
                     core.export_destinations
                         .insert(id, destination.to_path_buf());
@@ -222,14 +210,9 @@ impl ExportQueue {
         self.0.with_core(cancel_everything);
     }
 
-    /// Stops every job like `cancel_all()`, but keeps download recovery state to be resumed when
-    /// possible by the next download. Used on quit or sign-out.
+    /// Stops every job on quit or sign-out.
     pub fn suspend(&self) {
-        self.0.with_core(|core| {
-            let running: Vec<Uuid> = core.running.keys().copied().collect();
-            core.suspended.extend(running);
-            cancel_everything(core);
-        });
+        self.cancel_all();
     }
 
     /// Cancels one job: a running one stops, a queued one is skipped. Finished jobs and unknown
@@ -237,9 +220,10 @@ impl ExportQueue {
     pub fn cancel(&self, id: Uuid) {
         let inner = &self.0;
         inner.with_core(|core| {
-            if let Some(token) = core.running.get(&id) {
+            if let Some((_, token)) = core.running.as_ref().filter(|(running, _)| *running == id) {
                 token.cancel();
-            } else if core.scheduler.remove_pending(&id) {
+            } else if let Some(index) = core.pending.iter().position(|pending| *pending == id) {
+                core.pending.remove(index);
                 core.state.update(id, JobState::Cancelled);
                 schedule(inner, core);
             }
@@ -260,11 +244,10 @@ impl ExportQueue {
     pub fn resume_after_authentication(&self) {
         let inner = &self.0;
         inner.with_core(|core| {
-            for (_, waiter) in core.authentication_waiters.drain() {
+            if let Some(waiter) = core.authentication_waiter.take() {
                 let _ = waiter.send(());
             }
             core.state.snapshot.is_waiting_for_authentication = false;
-            core.scheduler.set_paused(false);
             schedule(inner, core);
         });
     }
@@ -285,29 +268,32 @@ impl ExportQueue {
 }
 
 fn cancel_everything(core: &mut Core) {
-    for entry in core.scheduler.remove_all_pending() {
-        core.state.update(entry.id, JobState::Cancelled);
+    for id in std::mem::take(&mut core.pending) {
+        core.state.update(id, JobState::Cancelled);
     }
-    core.running.values().for_each(CancellationToken::cancel);
+    if let Some((_, token)) = &core.running {
+        token.cancel();
+    }
     finish_if_idle(core);
 }
 
 fn schedule(inner: &Arc<Inner>, core: &mut Core) {
-    for entry in core.scheduler.reserve_ready() {
-        let id = entry.id;
-        let token = CancellationToken::new();
-        core.running.insert(id, token.clone());
-        let inner = inner.clone();
-        tokio::spawn(async move {
-            inner.process(id, token).await;
-            inner.job_ended(id);
-        });
+    if core.running.is_none() && !core.state.snapshot.is_waiting_for_authentication {
+        if let Some(id) = core.pending.pop_front() {
+            let token = CancellationToken::new();
+            core.running = Some((id, token.clone()));
+            let inner = inner.clone();
+            tokio::spawn(async move {
+                inner.process(id, token).await;
+                inner.job_ended(id);
+            });
+        }
     }
     finish_if_idle(core);
 }
 
 fn finish_if_idle(core: &mut Core) {
-    if !core.state.snapshot.is_running || !core.running.is_empty() || !core.scheduler.is_idle() {
+    if !core.state.snapshot.is_running || core.running.is_some() || !core.pending.is_empty() {
         return;
     }
     core.state.snapshot.is_running = false;
@@ -331,9 +317,7 @@ impl Inner {
 
     fn job_ended(self: &Arc<Self>, id: Uuid) {
         self.with_core(|core| {
-            core.running.remove(&id);
-            core.scheduler.finish(&id);
-            core.suspended.remove(&id);
+            core.running = None;
             core.export_destinations.remove(&id);
             schedule(self, core);
         });
@@ -359,7 +343,7 @@ impl Inner {
                 }
                 Err(ExporterError::AuthenticationRequired) => {
                     self.update(id, JobState::WaitingForAuthentication);
-                    self.wait_for_authentication(id, &cancel).await;
+                    self.wait_for_authentication(&cancel).await;
                     if cancel.is_cancelled() {
                         self.update(id, JobState::Cancelled);
                         return;
@@ -394,12 +378,10 @@ impl Inner {
             return Err(ExporterError::Cancelled);
         }
         let reporter = self.clone();
-        let keeper = self.clone();
         let context = ExportExecutionContext {
             report: Arc::new(move |event| {
                 reporter.with_core(|core| core.state.report(id, event));
             }),
-            keeps_recovery: Arc::new(move || keeper.with_core(|c| c.suspended.contains(&id))),
             cancel: cancel.clone(),
         };
         match job.kind {
@@ -419,15 +401,14 @@ impl Inner {
 
     // MARK: Authentication pause
 
-    async fn wait_for_authentication(self: &Arc<Self>, id: Uuid, cancel: &CancellationToken) {
+    async fn wait_for_authentication(self: &Arc<Self>, cancel: &CancellationToken) {
         let waiter = self.with_core(|core| {
             if cancel.is_cancelled() {
                 return None;
             }
             let (sender, receiver) = oneshot::channel();
-            core.authentication_waiters.insert(id, sender);
+            core.authentication_waiter = Some(sender);
             core.state.snapshot.is_waiting_for_authentication = true;
-            core.scheduler.set_paused(true);
             Some(receiver)
         });
         let Some(waiter) = waiter else {
@@ -435,18 +416,15 @@ impl Inner {
         };
         tokio::select! {
             _ = waiter => {}
-            _ = cancel.cancelled() => self.wake_authentication_waiter(id),
+            _ = cancel.cancelled() => self.wake_authentication_waiter(),
         }
     }
 
-    fn wake_authentication_waiter(self: &Arc<Self>, id: Uuid) {
+    fn wake_authentication_waiter(self: &Arc<Self>) {
         self.with_core(|core| {
-            core.authentication_waiters.remove(&id);
-            if core.authentication_waiters.is_empty() {
-                core.state.snapshot.is_waiting_for_authentication = false;
-                core.scheduler.set_paused(false);
-                schedule(self, core);
-            }
+            core.authentication_waiter = None;
+            core.state.snapshot.is_waiting_for_authentication = false;
+            schedule(self, core);
         });
     }
 }

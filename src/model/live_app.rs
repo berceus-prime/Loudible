@@ -69,16 +69,10 @@ fn status(status: &core::BookStatus) -> BookStatus {
             progress: *progress as f32,
             transferred: transferred.map(transfer),
         },
-        core::BookStatus::Failed {
-            kind,
-            message,
-            kept,
-        } => BookStatus::Failed {
+        core::BookStatus::Failed { kind, message } => BookStatus::Failed {
             kind: job_kind(*kind),
             message: message.clone(),
-            kept: kept.map(transfer),
         },
-        core::BookStatus::Paused(kept) => BookStatus::Paused(transfer(*kept)),
         core::BookStatus::Downloaded => BookStatus::Downloaded,
         core::BookStatus::Exported => BookStatus::Exported,
     }
@@ -87,7 +81,6 @@ fn status(status: &core::BookStatus) -> BookStatus {
 fn action(action: core::BookAction) -> BookAction {
     match action {
         core::BookAction::Download => BookAction::Download,
-        core::BookAction::ResumeDownload => BookAction::ResumeDownload,
         core::BookAction::Cancel { kind, .. } => BookAction::Cancel(job_kind(kind)),
         core::BookAction::Export => BookAction::Export,
         core::BookAction::ShowDownload => BookAction::ShowDownload,

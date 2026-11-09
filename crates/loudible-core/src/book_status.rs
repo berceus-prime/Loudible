@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{ExportJob, JobKind, JobState, TransferProgress};
 
 /// The one status shown on a book's cover. When several apply, the most relevant wins:
-/// running > queued > failed > paused > exported > downloaded > none.
+/// running > queued > failed > exported > downloaded > none.
 #[derive(Clone, Debug, PartialEq)]
 pub enum BookStatus {
     None,
@@ -17,15 +17,10 @@ pub enum BookStatus {
         transferred: Option<TransferProgress>,
     },
     /// The latest attempt failed. Kept in memory only; cleared when the next attempt starts.
-    /// `kept` is the part of the download kept for the next attempt.
     Failed {
         kind: JobKind,
         message: String,
-        kept: Option<TransferProgress>,
     },
-    /// An unfinished download is kept and nothing is running: it continues after signing in, or
-    /// from the menu.
-    Paused(TransferProgress),
     Downloaded,
     Exported,
 }
@@ -33,12 +28,10 @@ pub enum BookStatus {
 impl BookStatus {
     /// - `jobs`: the queue's jobs; only unfinished jobs of `asin` are considered.
     /// - `failure`: the failure of the book's latest attempt, if it failed.
-    /// - `partial`: how much of an unfinished download is kept, if any.
     pub fn resolve(
         asin: &str,
         jobs: &[ExportJob],
         failure: Option<(JobKind, &str)>,
-        partial: Option<TransferProgress>,
         is_downloaded: bool,
         is_exported: bool,
     ) -> Self {
@@ -63,11 +56,7 @@ impl BookStatus {
             return Self::Failed {
                 kind,
                 message: message.to_string(),
-                kept: partial,
             };
-        }
-        if let Some(partial) = partial {
-            return Self::Paused(partial);
         }
         if is_exported {
             return Self::Exported;
@@ -83,12 +72,7 @@ impl BookStatus {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BookAction {
     Download,
-    /// Download, continuing the bytes kept from an earlier attempt.
-    ResumeDownload,
-    Cancel {
-        job_id: Uuid,
-        kind: JobKind,
-    },
+    Cancel { job_id: Uuid, kind: JobKind },
     Export,
     ShowDownload,
     ShowExport,
@@ -120,8 +104,6 @@ pub struct BookMenuContext {
     pub is_in_library: bool,
     pub has_manifest: bool,
     pub is_signed_in: bool,
-    /// Whether bytes of an unfinished download are kept.
-    pub has_partial_download: bool,
 }
 
 /// Which menu items a book offers. Items that don't apply are left out, except Export of a
@@ -138,11 +120,7 @@ pub fn book_menu_items(
         .collect();
     let mut items = Vec::new();
     if !context.is_downloaded && context.is_in_library && active.is_empty() {
-        items.push(BookMenuItem::new(if context.has_partial_download {
-            BookAction::ResumeDownload
-        } else {
-            BookAction::Download
-        }));
+        items.push(BookMenuItem::new(BookAction::Download));
     }
     for job in &active {
         items.push(BookMenuItem::new(BookAction::Cancel {
@@ -164,7 +142,7 @@ pub fn book_menu_items(
     if context.is_exported {
         items.push(BookMenuItem::new(BookAction::ShowExport));
     }
-    if (context.is_downloaded || context.has_partial_download) && active.is_empty() {
+    if context.is_downloaded && active.is_empty() {
         items.push(BookMenuItem::new(BookAction::DeleteDownload));
     }
     items

@@ -217,12 +217,12 @@ impl<M: AppModel> AppView<M> {
         }
     }
 
-    /// The name of the book awaiting confirmation and whether only a partial download exists.
-    fn pending_delete_info(&self) -> Option<(String, bool)> {
+    /// The name of the downloaded book awaiting confirmation.
+    fn pending_delete_info(&self) -> Option<String> {
         let asin = self.pending_delete.as_ref()?;
         let visible = self.app.visible_books();
         let book = visible.into_iter().find(|b| b.asin == *asin)?;
-        Some((book.title.clone(), !self.app.has_download(book)))
+        Some(book.title.clone())
     }
 
     fn draw_toolbar(&self, ui: &mut Ui, width: f32) {
@@ -438,22 +438,12 @@ impl<M: AppModel> Screen for AppView<M> {
             // Toasts also present above the sign-in sheet, as in the Swift app.
             self.draw_toast(ui, size);
         }
-        if let Some((title, is_partial)) = self.pending_delete_info() {
+        if let Some(title) = self.pending_delete_info() {
             dialogs::modal_backdrop(ui, size);
             let trash = Platform::CURRENT.trash();
-            let (heading, confirm, message) = if is_partial {
-                (
-                    format!("Discard the unfinished download of “{title}”?"),
-                    "Discard".to_string(),
-                    "The next download starts from the beginning.",
-                )
-            } else {
-                (
-                    format!("Move “{title}” to the {trash}?"),
-                    format!("Move to {trash}"),
-                    "The exported M4B is not affected.",
-                )
-            };
+            let heading = format!("Move “{title}” to the {trash}?");
+            let confirm = format!("Move to {trash}");
+            let message = "The exported M4B is not affected.";
             dialogs::confirm_alert(
                 ui,
                 &heading,
@@ -468,7 +458,7 @@ impl<M: AppModel> Screen for AppView<M> {
             dialogs::confirm_alert(
                 ui,
                 "Quit and cancel the exports and queued jobs?",
-                "Exports in progress and queued jobs are cancelled. Downloads restart or resume next time. Finished files are kept.",
+                "Exports in progress and queued jobs are cancelled. Downloads restart next time. Finished files are kept.",
                 ("Quit", Action::ConfirmQuit),
                 Action::CancelQuit,
                 size,

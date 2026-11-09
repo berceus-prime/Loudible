@@ -43,7 +43,7 @@ pub trait AppModel {
     fn toasts(&self) -> &[Toast];
     fn selected_count(&self) -> usize;
     fn other_marketplaces(&self) -> Vec<(Marketplace, usize)>;
-    /// How many selected books offer `action` (Download also counts Resume Download).
+    /// How many selected books offer `action`.
     fn selection_offering(&self, action: BookAction) -> usize;
     fn can_sign_in(&self) -> bool;
     fn can_change_marketplace(&self) -> bool;

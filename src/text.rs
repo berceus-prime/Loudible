@@ -132,6 +132,8 @@ struct Key {
     rounded: bool,
     tabular: bool,
     color: u32,
+    /// `f32::to_bits` of the width an ellipsis cuts the line to, or 0 for unbounded.
+    limit: u32,
 }
 
 /// Lays out and caches single lines; a frame redraws mostly the same strings.
@@ -243,6 +245,7 @@ impl TextSystem {
         text: &str,
         style: TextStyle,
         color: Color,
+        limit: Option<f32>,
         use_line: impl FnOnce(&Paragraph) -> R,
     ) -> R {
         let key = Key {
@@ -252,6 +255,7 @@ impl TextSystem {
             rounded: style.rounded,
             tabular: style.tabular,
             color: u32::from_be_bytes([color.a(), color.r(), color.g(), color.b()]),
+            limit: limit.map_or(0, f32::to_bits),
         };
         let mut cache = self.cache.borrow_mut();
         if cache.len() > CACHE_LIMIT {
@@ -259,11 +263,12 @@ impl TextSystem {
         }
         let line = cache
             .entry(key)
-            .or_insert_with(|| self.build(text, style, color));
+            .or_insert_with(|| self.build(text, style, color, limit));
         use_line(line)
     }
 
-    fn build(&self, text: &str, style: TextStyle, color: Color) -> Paragraph {
+    /// With `limit`, the line is cut to that width with an ellipsis against the last kept letter.
+    fn build(&self, text: &str, style: TextStyle, color: Color, limit: Option<f32>) -> Paragraph {
         let mut sk = SkTextStyle::new();
         sk.set_font_families(if style.rounded {
             ROUNDED_FAMILIES
@@ -283,34 +288,21 @@ impl TextSystem {
         }
         let mut paragraph = ParagraphStyle::new();
         paragraph.set_max_lines(1);
+        if limit.is_some() {
+            paragraph.set_ellipsis("…");
+        }
         let mut builder = ParagraphBuilder::new(&paragraph, self.fonts.clone());
         builder.push_style(&sk);
         builder.add_text(text);
         let mut line = builder.build();
-        line.layout(UNBOUNDED);
+        line.layout(limit.unwrap_or(UNBOUNDED));
         line
     }
 
     pub fn width(&self, text: &str, style: TextStyle) -> f32 {
-        self.with_line(text, style, Color::BLACK, |l| {
+        self.with_line(text, style, Color::BLACK, None, |l| {
             l.max_intrinsic_width().ceil()
         })
-    }
-
-    /// `text` cut to fit `limit` with an ellipsis against the last kept letter, as AppKit does.
-    fn truncated(&self, text: &str, style: TextStyle, limit: f32) -> String {
-        let ends: Vec<usize> = text.char_indices().map(|(index, _)| index).collect();
-        let shortened = |count: usize| format!("{}…", text[..ends[count]].trim_end());
-        let (mut fits, mut too_long) = (0, ends.len());
-        while too_long - fits > 1 {
-            let middle = (fits + too_long) / 2;
-            if self.width(&shortened(middle), style) <= limit {
-                fits = middle;
-            } else {
-                too_long = middle;
-            }
-        }
-        shortened(fits)
     }
 
     /// Draws one line in a box of `style.line` height whose top-left is `origin`, truncating
@@ -324,11 +316,8 @@ impl TextSystem {
         origin: Point,
         limit: Option<f32>,
     ) {
-        let fitted = limit
-            .filter(|limit| !text.is_empty() && *limit < self.width(text, style))
-            .map(|limit| self.truncated(text, style, limit));
-        let text = fitted.as_deref().unwrap_or(text);
-        self.with_line(text, style, color, |line| {
+        let limit = limit.filter(|limit| !text.is_empty() && *limit < self.width(text, style));
+        self.with_line(text, style, color, limit, |line| {
             let y = origin.y + (style.line - line.height()) / 2.0 - BASELINE_NUDGE;
             line.paint(canvas, Point::new(origin.x, y));
         });
@@ -438,7 +427,7 @@ impl TextSystem {
     /// measure the same sample both ways and make up the difference.
     fn measure_adjustment(&self, style: TextStyle) -> Adjustment {
         let (drawn_width, drawn_baseline) =
-            self.with_line(SPACING_SAMPLE, style, Color::BLACK, |line| {
+            self.with_line(SPACING_SAMPLE, style, Color::BLACK, None, |line| {
                 let top = (style.line - line.height()) / 2.0 - BASELINE_NUDGE;
                 // Skia's paragraph paints on a whole-point baseline below its top.
                 let baseline = (line.alphabetic_baseline() + 0.5).floor();

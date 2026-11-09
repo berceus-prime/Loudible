@@ -106,7 +106,6 @@ impl AppSnapshot {
                     failures
                         .get(asin)
                         .map(|(kind, text)| (*kind, text.as_str())),
-                    disk.partial_downloads.get(asin).copied(),
                     disk.downloaded_files.contains_key(asin),
                     disk.exported_files.contains_key(asin),
                 )

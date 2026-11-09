@@ -31,31 +31,15 @@ pub fn accessibility_text(status: &BookStatus) -> Option<String> {
             }
             Some(text)
         }
-        BookStatus::Failed {
-            kind,
-            message,
-            kept,
-        } => {
+        BookStatus::Failed { kind, message } => {
             // Some reasons already say what failed ("Download failed: HTTP 500").
-            let mut text = if message.to_lowercase().contains("failed:") {
+            let text = if message.to_lowercase().contains("failed:") {
                 message.clone()
             } else {
                 format!("{} failed: {message}", word(kind, "Download", "Export"))
             };
-            if let Some(kept) = kept {
-                text.push_str(&format!(
-                    ", {} of {} downloaded",
-                    megabytes(kept.bytes_received),
-                    megabytes(kept.bytes_expected)
-                ));
-            }
             Some(text)
         }
-        BookStatus::Paused(kept) => Some(format!(
-            "Download paused, {} of {}",
-            megabytes(kept.bytes_received),
-            megabytes(kept.bytes_expected)
-        )),
         BookStatus::Downloaded => Some("Downloaded".to_string()),
         BookStatus::Exported => Some("Exported to M4B".to_string()),
     }

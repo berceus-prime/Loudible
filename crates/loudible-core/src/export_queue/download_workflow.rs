@@ -10,8 +10,8 @@ use super::file_finalizer::ExportFileFinalizer;
 use super::license_provider::LicenseProvider;
 use crate::export_file_naming::base_name;
 use crate::{
-    Audiobook, ContentLicense, DownloadManifest, DownloadRecovery, ExporterError, FileDownloader,
-    JobKind, LocalDownloads, PartialDownload, Phase,
+    Audiobook, ContentLicense, DownloadManifest, ExporterError, FileDownloader, JobKind,
+    LocalDownloads, Phase,
 };
 
 pub struct DownloadResult {
@@ -19,7 +19,7 @@ pub struct DownloadResult {
     pub fresh_license: Option<ContentLicense>,
 }
 
-/// Downloads encrypted audio and persists application-owned recovery and metadata.
+/// Downloads encrypted audio and persists its metadata.
 #[derive(Clone)]
 pub struct DownloadWorkflow {
     pub licenses: LicenseProvider,
@@ -46,11 +46,9 @@ impl DownloadWorkflow {
             });
         }
         context.phase(Phase::Licensing);
-        let (license, customer_id) = self.fetch_license(book, context).await?;
+        let license = self.fetch_license(book, context).await?;
         context.check_cancellation()?;
-        let input = self
-            .download(book, &license, &customer_id, kind, context)
-            .await?;
+        let input = self.download(book, &license, kind, context).await?;
         Ok(DownloadResult {
             input,
             fresh_license: Some(license),
@@ -62,7 +60,7 @@ impl DownloadWorkflow {
         &self,
         book: &Audiobook,
         context: &ExportExecutionContext,
-    ) -> Result<(ContentLicense, String), ExporterError> {
+    ) -> Result<ContentLicense, ExporterError> {
         tokio::select! {
             _ = context.cancel.cancelled() => Err(ExporterError::Cancelled),
             result = self.licenses.fetch(book) => result,
@@ -71,12 +69,11 @@ impl DownloadWorkflow {
 
     /// Downloads into a hidden staging file, writes the manifest, then moves the file
     /// to `Title [ASIN].<ext>`. The license is always fresh, since its download URL expires.
-    /// Failure or suspension keeps recovery state; explicit cancellation discards it.
+    /// A failed or cancelled transfer discards its staging bytes.
     async fn download(
         &self,
         book: &Audiobook,
         license: &ContentLicense,
-        customer_id: &str,
         kind: JobKind,
         context: &ExportExecutionContext,
     ) -> Result<PathBuf, ExporterError> {
@@ -84,11 +81,9 @@ impl DownloadWorkflow {
             self.downloads
                 .manifest_folder
                 .join(format!(".{}.{}.cover", book.asin, Uuid::new_v4()));
-        let result = self
-            .transfer(book, license, customer_id, kind, context, &cover)
-            .await;
+        let result = self.transfer(book, license, kind, context, &cover).await;
         let _ = fs::remove_file(&cover);
-        if result.is_err() && context.cancel.is_cancelled() && !(context.keeps_recovery)() {
+        if result.is_err() {
             self.downloads.remove_partial_download(&book.asin);
         }
         result
@@ -98,48 +93,23 @@ impl DownloadWorkflow {
         &self,
         book: &Audiobook,
         license: &ContentLicense,
-        customer_id: &str,
         kind: JobKind,
         context: &ExportExecutionContext,
         cover: &Path,
     ) -> Result<PathBuf, ExporterError> {
-        let resume_data = self.prepare_recovery(book, license, customer_id)?;
         let partial = self.downloads.partial_file_path(&book.asin);
+        self.downloads.remove_partial_download(&book.asin);
         context.phase(Phase::Downloading);
         let invocation = Uuid::new_v4();
         (context.report)(ExportProgressEvent::BeginDownload(invocation));
 
-        let recovery = {
-            let downloads = self.downloads.clone();
-            let book = book.clone();
-            let customer_id = customer_id.to_string();
-            let decryption = license.decryption.clone();
-            Arc::new(move |recovery: DownloadRecovery| {
-                // A failed recovery write leaves the initial record to restart from zero.
-                let _ = downloads.write_partial_download(&PartialDownload::new(
-                    book.clone(),
-                    customer_id.clone(),
-                    decryption.file_extension(),
-                    recovery,
-                    decryption.clone(),
-                    Utc::now(),
-                ));
-            })
-        };
         let progress = {
             let report = context.report.clone();
             Arc::new(move |value| report(ExportProgressEvent::Download(invocation, value)))
         };
         let result = self
             .downloader
-            .download(
-                &license.download_url,
-                &partial,
-                resume_data,
-                recovery,
-                progress,
-                &context.cancel,
-            )
+            .download(&license.download_url, &partial, progress, &context.cancel)
             .await;
         (context.report)(ExportProgressEvent::EndDownload(invocation));
         result?;
@@ -152,14 +122,7 @@ impl DownloadWorkflow {
         if let Some(cover_url) = &book.cover_image_url {
             let _ = self
                 .downloader
-                .download(
-                    cover_url,
-                    cover,
-                    None,
-                    Arc::new(|_| {}),
-                    Arc::new(|_| {}),
-                    &context.cancel,
-                )
+                .download(cover_url, cover, Arc::new(|_| {}), &context.cancel)
                 .await;
         }
         context.check_cancellation()?;
@@ -189,36 +152,5 @@ impl DownloadWorkflow {
             .inspect_err(|_| self.downloads.remove_manifest(&book.asin))?;
         self.downloads.remove_partial_download(&book.asin);
         Ok(path)
-    }
-
-    fn prepare_recovery(
-        &self,
-        book: &Audiobook,
-        license: &ContentLicense,
-        customer_id: &str,
-    ) -> Result<Option<Vec<u8>>, ExporterError> {
-        let extension = license.decryption.file_extension();
-        let usable = self
-            .downloads
-            .partial_download(&book.asin)
-            .filter(|record| {
-                record.customer_id == customer_id
-                    && record.book.asin == book.asin
-                    && record.file_extension == extension
-                    && record.decryption == license.decryption
-            });
-        if usable.is_none() {
-            self.downloads.remove_partial_download(&book.asin);
-        }
-        self.downloads
-            .write_partial_download(&PartialDownload::new(
-                book.clone(),
-                customer_id,
-                extension,
-                DownloadRecovery::default(),
-                license.decryption.clone(),
-                Utc::now(),
-            ))?;
-        Ok(usable.and_then(|record| record.recovery.resume_data))
     }
 }

@@ -33,7 +33,7 @@ live on one thread of their own.
 * `wake` runs on the model thread. It should only post an event to the UI loop.
 * `AppSnapshot` is immutable and `Send + Sync`. A snapshot already handed out never changes;
   later commands only show up in later snapshots.
-* File work (scans, trashing, sweeping partial downloads) runs in `spawn_blocking`. If it
+* File work (scans, trashing, sweeping staging files) runs in `spawn_blocking`. If it
   panics, the previous state stays.
 * Dropping the `AppHandle` closes the command channel, which ends the thread and the tasks on it.
 
@@ -67,7 +67,7 @@ let snapshot = handle.snapshot(); // Arc<AppSnapshot>, cheap to clone
 
 | Type | Responsibility |
 | --- | --- |
-| `AppViewModel` | Owns the other three and the `ErrorToastQueue`. Signing in loads the library; signing out (not re-authentication) resets it; a new sign-in resumes jobs paused for authentication. A token refresh keeps the device and doesn't reload. Keeps `DiskState` (downloaded, exported and partly downloaded books, manifests) from rescans of the folders, and rescans after each finished job. Continues the signed-in account's unfinished downloads and deletes ones that can't be continued. Resolves per-book status and menus, and runs selection actions. |
+| `AppViewModel` | Owns the other three and the `ErrorToastQueue`. Signing in loads the library; signing out (not re-authentication) resets it; a new sign-in resumes jobs paused for authentication. A token refresh keeps the device and doesn't reload. Keeps `DiskState` (downloaded and exported books, manifests) from rescans of the folders, and rescans after each finished job. Resolves per-book status and menus, and runs selection actions. |
 | `SessionViewModel` | Mirrors `AuthenticationCoordinator`: restore at start, marketplace, pending login, pasted callback URL, sign in and out, re-authentication. Derives `can_sign_in`, `can_sign_out`, `can_change_marketplace`, `can_submit_pasted_url` and `account_description`. Credential storage failures and browser failures become `AppError`s. |
 | `LibraryViewModel` | The purchased library with search and multi-selection. A refresh loads the home marketplace and shows it, then checks every other marketplace and merges what it finds, with a count per store. Stores that fail become `marketplace_notice`, not an error. Downloaded books no longer in the library are appended, sorted by title, while signed in (or while a re-authentication keeps the last library visible). Hidden books are filtered out. |
 | `ExportViewModel` | Mirrors `ExportQueue` snapshots: jobs, progress, waiting for authentication. Enqueues downloads and exports, cancels one job or all, suspends. Keeps each book's latest failure until its next attempt, and toasts each failed job once. `has_work_suspend_loses` says whether stopping now would lose an export or a job that hadn't started. |
@@ -100,15 +100,10 @@ let snapshot = handle.snapshot(); // Arc<AppSnapshot>, cheap to clone
   older generation is dropped, and a reset or new refresh aborts the marketplace check.
 * Selection is reconciled with the books only once marketplace checks finish, so a selected
   title from another store survives a refresh.
-* `reconcile_partial_downloads` acts only when the library loaded completely and no marketplace
-  is being checked, so a failed refresh deletes nothing. It skips books with a job, books that
-  failed this session (they wait for Resume Download), and doesn't discard a book missing from
-  the library while some store couldn't be checked.
 * `rescan` keeps the manifests of books with an unfinished job: a download writes its manifest
   before the file gets its final name.
-* `sign_out` suspends jobs first. Downloads keep their bytes and continue after signing in to
-  the same account; exports and jobs that hadn't started are dropped.
-* `delete_download` trashes the audio file, manifest and any partial download, but keeps the M4B.
+* `sign_out` suspends jobs first. Incomplete downloads are discarded; completed files are kept.
+* `delete_download` trashes the audio file, manifest and staging bytes, but keeps the M4B.
 * `AppSnapshot::capture` groups jobs by book once, so a large library doesn't cost
   books × jobs on every progress update. `visible_books` is cached until the books or the search
   change.
@@ -135,7 +130,7 @@ let snapshot = handle.snapshot(); // Arc<AppSnapshot>, cheap to clone
 | `tests/app_runtime.rs` | The model thread as the UI sees it: snapshots, wake, commands, suspend, dropping the handle. |
 | `tests/session_view_model.rs` | Restore, sign-in by browser and by pasted URL, sign-out, re-authentication, credential toasts. |
 | `tests/library_view_model.rs` | Loading, search, selection, other marketplaces, local-only books, reset. |
-| `tests/export_view_model.rs` | `AppViewModel` with real `ExportQueue`: exports, cancelling, sign-out and resume, rescans, partial downloads, failures. |
+| `tests/export_view_model.rs` | `AppViewModel` with real `ExportQueue`: exports, cancelling, sign-out, rescans, fresh downloads, failures. |
 | `tests/error_toasts.rs` | `ErrorToastQueue` order and dismissal, `AppError` text. |
 | `tests/book_status_text.rs` | Every status's text. |
 | `tests/support/mod.rs` | `local`, and `Fixture` over the doubles in `loudible-test-support`. All data is synthetic. |

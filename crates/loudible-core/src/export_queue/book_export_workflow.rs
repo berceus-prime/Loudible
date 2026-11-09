@@ -40,7 +40,7 @@ impl BookExportWorkflow {
             (manifest.decryption, manifest.chapters)
         } else {
             context.phase(Phase::Licensing);
-            let (fresh, _) = self.download.fetch_license(book, context).await?;
+            let fresh = self.download.fetch_license(book, context).await?;
             (fresh.decryption, fresh.chapters)
         };
         context.check_cancellation()?;

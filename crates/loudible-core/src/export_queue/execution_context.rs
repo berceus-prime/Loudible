@@ -3,14 +3,14 @@ use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use crate::{DownloadProgress, ExporterError, Phase};
+use crate::{ExporterError, Phase, TransferProgress};
 
 /// Progress events carry identity so delayed adapter callbacks cannot affect later transfers.
 #[derive(Clone, Copy, Debug)]
 pub enum ExportProgressEvent {
     Phase(Phase),
     BeginDownload(Uuid),
-    Download(Uuid, DownloadProgress),
+    Download(Uuid, TransferProgress),
     EndDownload(Uuid),
     Conversion(f64),
 }
@@ -19,7 +19,6 @@ pub enum ExportProgressEvent {
 #[derive(Clone)]
 pub struct ExportExecutionContext {
     pub report: Arc<dyn Fn(ExportProgressEvent) + Send + Sync>,
-    pub keeps_recovery: Arc<dyn Fn() -> bool + Send + Sync>,
     pub cancel: CancellationToken,
 }
 

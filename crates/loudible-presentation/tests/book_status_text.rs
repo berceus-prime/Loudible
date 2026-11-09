@@ -36,7 +36,6 @@ fn describes_every_status() {
         text(BookStatus::Failed {
             kind: JobKind::Export,
             message: "disk full".into(),
-            kept: None
         })
         .unwrap(),
         "Export failed: disk full"
@@ -45,14 +44,9 @@ fn describes_every_status() {
         text(BookStatus::Failed {
             kind: JobKind::Download,
             message: "Download failed: HTTP 500".into(),
-            kept: Some(kept)
         })
         .unwrap(),
-        "Download failed: HTTP 500, 132 MB of 288 MB downloaded"
-    );
-    assert_eq!(
-        text(BookStatus::Paused(kept)).unwrap(),
-        "Download paused, 132 MB of 288 MB"
+        "Download failed: HTTP 500"
     );
     assert_eq!(text(BookStatus::Downloaded).unwrap(), "Downloaded");
     assert_eq!(text(BookStatus::Exported).unwrap(), "Exported to M4B");

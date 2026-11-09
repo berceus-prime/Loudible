@@ -9,7 +9,7 @@ use super::app_error::AppError;
 use super::app_model::{AppModel, ModelEffect};
 use super::book::{
     Asin, Audiobook, BookAction, BookMenuItem, BookStatus, BookTileState, JobKind, Marketplace,
-    TransferProgress, menu_items,
+    menu_items,
 };
 use super::preview_data::{self, Account};
 
@@ -108,7 +108,6 @@ pub struct MockApp {
     downloaded: BTreeSet<Asin>,
     exported: BTreeSet<Asin>,
     failures: BTreeMap<Asin, (JobKind, String)>,
-    partial: BTreeMap<Asin, TransferProgress>,
     failed_once: BTreeSet<(Asin, JobKind)>,
     toasts: Vec<Toast>,
     next_toast_id: u64,
@@ -132,7 +131,6 @@ impl MockApp {
             downloaded: BTreeSet::new(),
             exported: BTreeSet::new(),
             failures: BTreeMap::new(),
-            partial: BTreeMap::new(),
             failed_once: BTreeSet::new(),
             toasts: vec![],
             next_toast_id: 1,
@@ -286,11 +284,7 @@ impl MockApp {
             return BookStatus::Failed {
                 kind: *kind,
                 message: message.clone(),
-                kept: self.partial.get(&book.asin).copied(),
             };
-        }
-        if let Some(kept) = self.partial.get(&book.asin) {
-            return BookStatus::Paused(*kept);
         }
         if self.exported.contains(&book.asin) {
             return BookStatus::Exported;
@@ -318,19 +312,14 @@ impl MockApp {
         }
     }
 
-    /// How many selected books offer `action` (Download also counts Resume Download).
+    /// How many selected books offer `action`.
     pub fn selection_offering(&self, action: BookAction) -> usize {
         self.selected_books()
             .filter(|book| {
                 self.tile(book)
                     .menu_items
                     .iter()
-                    .any(|item: &BookMenuItem| {
-                        item.is_enabled()
-                            && (item.action == action
-                                || (action == BookAction::Download
-                                    && item.action == BookAction::ResumeDownload))
-                    })
+                    .any(|item: &BookMenuItem| item.is_enabled() && item.action == action)
             })
             .count()
     }
@@ -398,13 +387,6 @@ impl MockApp {
     }
 
     pub fn sign_out(&mut self) {
-        // Unfinished downloads are kept, as the real app does, and resumed after signing in.
-        if let Some(job) = self.queue.first().cloned()
-            && job.kind == JobKind::Download
-            && let Some(kept) = self.book(&job.asin).map(|b| b.transferred(job.progress))
-        {
-            self.partial.insert(job.asin, kept);
-        }
         self.queue.clear();
         self.session = Session::SignedOut {
             needs_reauthentication: false,
@@ -454,9 +436,7 @@ impl MockApp {
     pub fn perform(&mut self, action: BookAction, asin: &str) {
         let asin = Asin::from(asin);
         match action {
-            BookAction::Download | BookAction::ResumeDownload => {
-                self.enqueue(asin, JobKind::Download)
-            }
+            BookAction::Download => self.enqueue(asin, JobKind::Download),
             BookAction::Export => {
                 if !self.downloaded.contains(&asin) {
                     self.enqueue(asin.clone(), JobKind::Download);
@@ -469,14 +449,7 @@ impl MockApp {
                     .iter()
                     .position(|j| j.asin == asin && j.kind == kind)
                 {
-                    let job = self.queue.remove(index);
-                    // A cancelled download keeps what it received, so it can resume.
-                    if index == 0 && job.kind == JobKind::Download && job.progress > 0.0 {
-                        let kept = self.book(&asin).map(|b| b.transferred(job.progress));
-                        if let Some(kept) = kept {
-                            self.partial.insert(asin.clone(), kept);
-                        }
-                    }
+                    self.queue.remove(index);
                     // An export waiting on this download cannot run any more.
                     if kind == JobKind::Download && !self.downloaded.contains(&asin) {
                         self.queue.retain(|j| j.asin != asin);
@@ -488,7 +461,6 @@ impl MockApp {
             }
             BookAction::DeleteDownload => {
                 self.downloaded.remove(&asin);
-                self.partial.remove(&asin);
                 self.failures.remove(&asin);
             }
         }
@@ -507,12 +479,8 @@ impl MockApp {
             let items = self.tile(book).menu_items;
             let offered =
                 |wanted: BookAction| items.iter().any(|i| i.is_enabled() && i.action == wanted);
-            match action {
-                BookAction::Download if offered(BookAction::ResumeDownload) => {
-                    self.perform(BookAction::ResumeDownload, &asin)
-                }
-                _ if offered(action) => self.perform(action, &asin),
-                _ => {}
+            if offered(action) {
+                self.perform(action, &asin);
             }
         }
         self.selection.clear();
@@ -527,12 +495,7 @@ impl MockApp {
             return;
         }
         self.failures.remove(&asin);
-        let progress = match kind {
-            JobKind::Download => self.partial.get(&asin).map_or(0.0, |kept| {
-                kept.received as f32 / kept.expected.max(1) as f32
-            }),
-            JobKind::Export => 0.0,
-        };
+        let progress = 0.0;
         self.queue.push(Job {
             asin,
             kind,
@@ -596,13 +559,6 @@ impl MockApp {
                 marketplace,
                 ..preview_data::account()
             });
-            // Downloads kept from before signing out continue.
-            let kept: Vec<Asin> = self.partial.keys().cloned().collect();
-            for asin in kept {
-                if !self.failures.contains_key(&asin) {
-                    self.enqueue(asin, JobKind::Download);
-                }
-            }
             self.load = LibraryLoad::Loading { elapsed_ms: 0 };
         }
     }
@@ -657,7 +613,6 @@ impl MockApp {
                         "{title}: The download license was denied: License not granted.\nOwnership / RequesterEligibility: No purchase rights found for this title."
                     ),
                 },
-                false,
             )),
             (FLAKY_DOWNLOAD, JobKind::Download) if first_attempt && progress > 0.4 => Some((
                 "The network connection was lost.".to_string(),
@@ -667,7 +622,6 @@ impl MockApp {
                         "{title}: NSURLErrorDomain Code=-1005: The network connection was lost."
                     ),
                 },
-                true,
             )),
             (FAILING_EXPORT, JobKind::Export) if first_attempt && progress > 0.7 => Some((
                 "Could not write output file.".to_string(),
@@ -676,18 +630,13 @@ impl MockApp {
                     technical:
                         "Conversion failed: Could not write output file (Permission denied).".into(),
                 },
-                false,
             )),
             _ => None,
         };
 
-        if let Some((message, error, keeps_partial)) = failure {
+        if let Some((message, error)) = failure {
             self.queue.remove(0);
             self.failed_once.insert((asin.clone(), kind));
-            let kept = self.book(&asin).map(|book| book.transferred(progress));
-            if keeps_partial && let Some(kept) = kept {
-                self.partial.insert(asin.clone(), kept);
-            }
             if kind == JobKind::Download {
                 self.queue.retain(|j| j.asin != asin);
             }
@@ -697,7 +646,6 @@ impl MockApp {
             self.queue.remove(0);
             match kind {
                 JobKind::Download => {
-                    self.partial.remove(&asin);
                     self.downloaded.insert(asin);
                 }
                 JobKind::Export => {
@@ -1009,34 +957,30 @@ mod tests {
     }
 
     #[test]
-    fn flaky_download_fails_once_keeping_bytes_then_resumes() {
+    fn flaky_download_fails_once_then_restarts() {
         let mut app = signed_in();
         app.perform(BookAction::Download, FLAKY_DOWNLOAD);
         app.tick(DOWNLOAD_MS as u32 / 2);
         let deep = book(&app, FLAKY_DOWNLOAD);
-        assert!(matches!(
-            app.status(&deep),
-            BookStatus::Failed { kept: Some(_), .. }
-        ));
+        assert!(matches!(app.status(&deep), BookStatus::Failed { .. }));
         assert_eq!(app.toasts().len(), 1);
         let items = app.tile(&deep).menu_items;
-        assert_eq!(items[0].action, BookAction::ResumeDownload);
-        app.perform(BookAction::ResumeDownload, FLAKY_DOWNLOAD);
+        assert_eq!(items[0].action, BookAction::Download);
+        app.perform(BookAction::Download, FLAKY_DOWNLOAD);
         app.tick(DOWNLOAD_MS as u32);
         assert_eq!(app.status(&deep), BookStatus::Downloaded);
     }
 
     #[test]
-    fn cancel_keeps_a_partial_download() {
+    fn cancel_discards_a_partial_download() {
         let mut app = signed_in();
         app.perform(BookAction::Download, "PREVIEW002");
         app.tick(1_000);
         app.perform(BookAction::Cancel(JobKind::Download), "PREVIEW002");
         assert!(matches!(
             app.status(&book(&app, "PREVIEW002")),
-            BookStatus::Paused(_)
+            BookStatus::None
         ));
-        app.perform(BookAction::DeleteDownload, "PREVIEW002");
         assert_eq!(app.status(&book(&app, "PREVIEW002")), BookStatus::None);
     }
 
@@ -1064,7 +1008,7 @@ mod tests {
     }
 
     #[test]
-    fn sign_out_keeps_the_running_download_for_later() {
+    fn sign_out_discards_the_running_download() {
         let mut app = signed_in();
         app.perform(BookAction::Download, "PREVIEW002");
         app.tick(1_000);
@@ -1074,9 +1018,11 @@ mod tests {
         app.complete_sign_in();
         app.tick(REGISTER_MS);
         app.tick(LOAD_MS);
+        assert_eq!(app.status(&book(&app, "PREVIEW002")), BookStatus::None);
+        app.perform(BookAction::Download, "PREVIEW002");
         assert!(matches!(
             app.status(&book(&app, "PREVIEW002")),
-            BookStatus::Running { progress, .. } if progress > 0.2
+            BookStatus::Running { progress: 0.0, .. }
         ));
     }
 }

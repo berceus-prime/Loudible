@@ -62,7 +62,6 @@ fn flow(signed_in: bool) -> Flow {
         downloader.clone(),
         Arc::new(MockConverter::default()),
         downloads.clone(),
-        3,
     );
     let handle = start_app(
         AppDependencies {
@@ -345,9 +344,7 @@ fn closing_during_a_download_stops_it_keeping_its_progress() {
         );
         std::thread::sleep(Duration::from_millis(2));
     }
-    let records = flow.downloads.partial_downloads();
-    assert_eq!(records.len(), 1);
-    assert!(records[0].recovery.resume_data.is_some());
+    assert!(!flow.downloads.partial_file_path("B1").exists());
 }
 
 #[test]

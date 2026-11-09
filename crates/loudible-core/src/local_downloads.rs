@@ -5,10 +5,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde::{Serialize, de::DeserializeOwned};
+use tempfile::NamedTempFile;
 use uuid::Uuid;
 
 use crate::export_file_naming::{self as naming, FILE_EXTENSION};
-use crate::{DownloadManifest, ExporterError, PartialDownload, TransferProgress};
+use crate::{DownloadManifest, ExporterError};
 
 pub const AUDIO_EXTENSIONS: [&str; 2] = ["aax", "aaxc"];
 
@@ -19,8 +20,7 @@ pub type Trash = Arc<dyn Fn(&Path) -> io::Result<()> + Send + Sync>;
 /// The audio file in `folder` is the source of truth for "downloaded": a book is downloaded when a
 /// non-hidden `.aax`/`.aaxc` whose name carries `[ASIN]` exists there. Manifests (`<ASIN>.json`,
 /// plus the cover as `<ASIN>.cover`) live in `manifest_folder`, owner-only, and a manifest without
-/// its audio file is an orphan to delete. Unfinished-download records (`<ASIN>.partial`) live
-/// in `manifest_folder`.
+/// its audio file is an orphan to delete.
 #[derive(Clone)]
 pub struct LocalDownloads {
     pub folder: PathBuf,
@@ -111,18 +111,43 @@ fn make_private(path: &Path) -> io::Result<()> {
     }
 }
 
-/// Replaces `destination` atomically. Windows refuses while anything, even an indexer or virus
-/// scanner, briefly has the file open, so it gets a few tries.
+/// Windows refuses to replace a file while anything, even an indexer or virus scanner, briefly
+/// has it open, so replacing gets a few tries.
+const REPLACE_ATTEMPTS: u32 = if cfg!(windows) { 5 } else { 1 };
+const REPLACE_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(50);
+
+/// Replaces `destination` atomically.
 fn replace(destination: &Path, source: &Path) -> io::Result<()> {
-    const ATTEMPTS: u32 = if cfg!(windows) { 5 } else { 1 };
     let mut attempt = 1;
     loop {
         match fs::rename(source, destination) {
-            Err(error) if attempt < ATTEMPTS && error.kind() == io::ErrorKind::PermissionDenied => {
-                std::thread::sleep(std::time::Duration::from_millis(50));
+            Err(error)
+                if attempt < REPLACE_ATTEMPTS
+                    && error.kind() == io::ErrorKind::PermissionDenied =>
+            {
+                std::thread::sleep(REPLACE_RETRY_DELAY);
                 attempt += 1;
             }
             result => return result,
+        }
+    }
+}
+
+/// Replaces `destination` with `file` atomically. On failure the temporary file is deleted.
+fn persist(mut file: NamedTempFile, destination: &Path) -> io::Result<()> {
+    let mut attempt = 1;
+    loop {
+        match file.persist(destination) {
+            Ok(_) => return Ok(()),
+            Err(failure)
+                if attempt < REPLACE_ATTEMPTS
+                    && failure.error.kind() == io::ErrorKind::PermissionDenied =>
+            {
+                file = failure.file;
+                std::thread::sleep(REPLACE_RETRY_DELAY);
+                attempt += 1;
+            }
+            Err(failure) => return Err(failure.error),
         }
     }
 }
@@ -257,27 +282,19 @@ impl LocalDownloads {
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("record");
-        let temporary = self
-            .manifest_folder
-            .join(format!(".{name}.{}.tmp", Uuid::new_v4()));
-        let mut options = OpenOptions::new();
-        options.write(true).create_new(true);
+        // Named like the leftovers `sweep_partials` removes; dropping the file deletes it.
+        let prefix = format!(".{name}.");
+        let mut builder = tempfile::Builder::new();
+        builder.prefix(&prefix).suffix(".tmp");
         #[cfg(unix)]
         {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
+            use std::os::unix::fs::PermissionsExt;
+            builder.permissions(fs::Permissions::from_mode(0o600));
         }
-        let write = || -> io::Result<()> {
-            let mut file = options.open(&temporary)?;
-            file.write_all(&serde_json::to_vec_pretty(value).map_err(io::Error::other)?)?;
-            drop(file);
-            replace(destination, &temporary)
-        };
-        let result = write();
-        if result.is_err() {
-            let _ = fs::remove_file(&temporary);
-        }
-        result
+        let mut file = builder.tempfile_in(&self.manifest_folder)?;
+        file.as_file_mut()
+            .write_all(&serde_json::to_vec_pretty(value).map_err(io::Error::other)?)?;
+        persist(file, destination)
     }
 
     fn decode<T: DeserializeOwned>(path: &Path) -> Option<T> {
@@ -338,70 +355,32 @@ impl LocalDownloads {
         Ok(())
     }
 
-    /// Removes app-owned partial files left by interrupted runs, except the bytes a recovery
-    /// record can still resume from.
+    /// Removes staging files and legacy recovery records left by interrupted runs.
     pub fn sweep_partials(&self) {
-        let resumable: HashSet<String> = self
-            .partial_downloads()
-            .iter()
-            .filter(|record| record.recovery.resume_data.is_some())
-            .map(|record| naming::resumable_partial_name(&record.book.asin))
-            .collect();
         for name in names_in(&self.folder) {
-            if naming::is_partial(&name) && !resumable.contains(&name) {
+            if naming::is_partial(&name) {
                 let _ = fs::remove_file(self.folder.join(name));
             }
         }
         for name in names_in(&self.manifest_folder) {
-            if name.starts_with('.') && (name.ends_with(".cover") || name.ends_with(".tmp")) {
+            if name.ends_with(".partial")
+                || name.starts_with('.') && (name.ends_with(".cover") || name.ends_with(".tmp"))
+            {
                 let _ = fs::remove_file(self.manifest_folder.join(name));
             }
         }
     }
 
-    // MARK: Unfinished downloads
+    // MARK: Staging downloads
 
     /// Staging destination for a completed download, before final naming.
     pub fn partial_file_path(&self, asin: &str) -> PathBuf {
-        self.folder.join(naming::resumable_partial_name(asin))
+        self.folder.join(naming::download_staging_name(asin))
     }
 
-    fn partial_record_path(&self, asin: &str) -> PathBuf {
-        self.manifest_folder.join(format!("{asin}.partial"))
-    }
-
-    pub fn partial_download(&self, asin: &str) -> Option<PartialDownload> {
-        Self::decode::<PartialDownload>(&self.partial_record_path(asin))
-            .filter(|record| record.version == PartialDownload::CURRENT_VERSION)
-    }
-
-    /// Every current recovery record, including downloads that must restart from zero.
-    pub fn partial_downloads(&self) -> Vec<PartialDownload> {
-        self.record_names(".partial")
-            .iter()
-            .filter_map(|asin| self.partial_download(asin))
-            .collect()
-    }
-
-    /// Owner-only, like the manifests: the record names the account.
-    pub fn write_partial_download(&self, record: &PartialDownload) -> Result<(), ExporterError> {
-        self.write_privately(record, &self.partial_record_path(&record.book.asin))
-            .map_err(|error| {
-                ExporterError::FileSystem(format!("Could not save the download progress: {error}"))
-            })
-    }
-
-    /// Deletes the record and the bytes.
+    /// Deletes staging bytes and any legacy recovery record for this book.
     pub fn remove_partial_download(&self, asin: &str) {
         let _ = fs::remove_file(self.partial_file_path(asin));
-        let _ = fs::remove_file(self.partial_record_path(asin));
-    }
-
-    /// Last observed interruption progress.
-    pub fn partial_progress(&self, record: &PartialDownload) -> TransferProgress {
-        record
-            .recovery
-            .progress
-            .unwrap_or(TransferProgress::new(0, 0))
+        let _ = fs::remove_file(self.manifest_folder.join(format!("{asin}.partial")));
     }
 }

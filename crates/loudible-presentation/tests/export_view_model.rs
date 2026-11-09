@@ -2,8 +2,6 @@
 
 mod support;
 
-use std::time::Duration;
-
 use loudible_core::*;
 use loudible_presentation::*;
 use loudible_test_support::*;
@@ -337,11 +335,10 @@ fn download_and_export_run_together() {
     });
 }
 
-fn failed(message: &str, kept: Option<TransferProgress>) -> BookStatus {
+fn failed(message: &str) -> BookStatus {
     BookStatus::Failed {
         kind: JobKind::Download,
         message: message.into(),
-        kept,
     }
 }
 
@@ -358,7 +355,7 @@ fn failure_stays_until_the_next_attempt() {
         let (app, queue) = f.make_app().await;
         let books = app.library().books();
         let target = &books[0];
-        let denied = failed("The download license was denied: not owned", None);
+        let denied = failed("The download license was denied: not owned");
         app.export().download(std::slice::from_ref(target));
         queue.wait_until_finished().await;
         wait_until(|| app.status(target) == denied).await;
@@ -403,174 +400,6 @@ fn delete_download_keeps_the_export() {
                 BookAction::ShowExport
             ]
         );
-    });
-}
-
-#[test]
-fn sign_out_pauses_downloads_and_signing_in_again_continues_them() {
-    local(async {
-        let f = Fixture::new();
-        f.downloader
-            .on_download(|source, destination, cancel| async move {
-                // B2 only ends by being stopped, reporting recovery through the mock.
-                if source.path().ends_with("B2.aaxc") {
-                    write(&destination, "enc")?;
-                    tokio::select! {
-                        () = cancel.cancelled() => return Err(ExporterError::Cancelled),
-                        () = tokio::time::sleep(Duration::from_secs(60)) => {}
-                    }
-                }
-                write(&destination, "encrypted")
-            });
-        let (app, queue) = f.make_app_with_two_slots().await;
-        app.export().download(&app.library().books());
-        wait_until(|| f.downloader.downloads.current().len() == 2).await;
-        assert!(app.has_active_jobs());
-        app.sign_out().await;
-        queue.wait_until_finished().await;
-        assert!(!app.has_active_jobs());
-        assert!(!app.session().is_signed_in());
-        assert_eq!(asins_of(&f.downloads.scan_downloads()), ["B1"]);
-        assert_eq!(app.partial_downloads().get("B2"), Some(&kept()));
-        assert_eq!(app.partial_downloads().len(), 1);
-        wait_until(|| app.library().books().is_empty()).await;
-
-        f.downloader
-            .on_download(|_, destination, _| async move { write(&destination, "encrypted") });
-        f.api.on_register(|_, _| async { Ok(session()) });
-        app.session().sign_in();
-        app.session().complete_sign_in(&us_callback()).await;
-        wait_until(|| asins_of(&f.downloads.scan_downloads()) == ["B1", "B2"]).await;
-        assert_eq!(
-            f.downloader.resumes.current().last().unwrap().as_deref(),
-            Some(RESUME_TOKEN)
-        );
-        wait_until(|| app.partial_downloads().is_empty()).await;
-    });
-}
-
-#[test]
-fn launch_continues_the_accounts_downloads_and_drops_the_rest() {
-    for has_token in [true, false] {
-        local(async {
-            let f = Fixture::new();
-            let token = has_token.then_some(RESUME_TOKEN);
-            f.keep_partial("B1", &session().customer_id, token);
-            f.keep_partial("B2", "amzn1.account.SOMEONE.ELSE", Some(RESUME_TOKEN));
-            f.keep_partial("B9", &session().customer_id, Some(RESUME_TOKEN)); // no longer in the library
-            let (app, queue) = f.make_app().await;
-            queue.wait_until_finished().await;
-            wait_until(|| asins_of(&app.downloaded_files()) == ["B1"]).await;
-            let resumes = f.downloader.resumes.current();
-            assert_eq!(resumes.len(), 1);
-            assert_eq!(resumes[0].as_deref(), token);
-            assert!(f.downloads.partial_downloads().is_empty());
-            assert!(app.partial_downloads().is_empty());
-            assert_eq!(app.status(&app.library().books()[1]), BookStatus::None);
-        });
-    }
-}
-
-#[test]
-fn signed_out_launch_keeps_recovery_and_shows_it_paused() {
-    local(async {
-        let f = Fixture::new();
-        f.store.stored.set(None);
-        f.keep_partial("B1", &session().customer_id, Some(RESUME_TOKEN));
-        let (app, _) = f.make_app().await;
-        assert!(!app.session().is_signed_in());
-        assert!(f.downloader.downloads.current().is_empty());
-        let progress = TransferProgress::new(3, 9);
-        assert_eq!(app.partial_downloads().get("B1"), Some(&progress));
-        assert_eq!(app.status(&book("B1")), BookStatus::Paused(progress));
-    });
-}
-
-#[test]
-fn failed_library_load_deletes_nothing() {
-    local(async {
-        let f = Fixture::new();
-        f.api
-            .on_library(|_| async { Err(ExporterError::Network("offline".into())) });
-        f.keep_partial("B9", &session().customer_id, Some(RESUME_TOKEN));
-        let (app, _) = f.make_app().await;
-        assert!(app.library().error_message().is_some());
-        assert!(f.downloads.partial_download("B9").is_some());
-        assert!(f.downloader.downloads.current().is_empty());
-    });
-}
-
-fn fails_with_http_500(f: &Fixture) {
-    f.downloader.on_download(|_, destination, _| async move {
-        write(&destination, "enc")?;
-        Err(ExporterError::Download("HTTP 500".into()))
-    });
-}
-
-#[test]
-fn failed_download_keeps_recovery_until_resumed_or_discarded() {
-    local(async {
-        let f = Fixture::new();
-        fails_with_http_500(&f);
-        let (app, queue) = f.make_app().await;
-        let target = app.library().books()[0].clone();
-        app.export().download(std::slice::from_ref(&target));
-        queue.wait_until_finished().await;
-        let failure = failed("Download failed: HTTP 500", Some(kept()));
-        wait_until(|| app.status(&target) == failure).await;
-        assert_eq!(
-            actions(&app.menu_items(&target)),
-            [
-                BookAction::ResumeDownload,
-                BookAction::Export,
-                BookAction::DeleteDownload
-            ]
-        );
-        assert!(app.selected_books_offering(BookAction::Download).is_empty());
-        app.library().toggle_selection(&target.asin);
-        assert_eq!(
-            app.selected_books_offering(BookAction::Download),
-            std::slice::from_ref(&target)
-        );
-
-        // A refresh doesn't retry it by itself.
-        app.refresh_library().await;
-        assert_eq!(f.downloader.downloads.current().len(), 1);
-
-        app.delete_download(&target).await;
-        assert_eq!(
-            app.status(&target),
-            failed("Download failed: HTTP 500", None)
-        );
-        assert!(f.downloads.partial_downloads().is_empty());
-        assert_eq!(
-            actions(&app.menu_items(&target)),
-            [BookAction::Download, BookAction::Export]
-        );
-    });
-}
-
-#[test]
-fn resume_download_reuses_the_token() {
-    local(async {
-        let f = Fixture::new();
-        fails_with_http_500(&f);
-        let (app, queue) = f.make_app().await;
-        let target = app.library().books()[0].clone();
-        app.perform(BookAction::Download, &target).await;
-        queue.wait_until_finished().await;
-        wait_until(|| app.partial_downloads().contains_key(&target.asin)).await;
-
-        f.downloader
-            .on_download(|_, destination, _| async move { write(&destination, "encrypted") });
-        app.perform(BookAction::ResumeDownload, &target).await;
-        queue.wait_until_finished().await;
-        wait_until(|| app.status(&target) == BookStatus::Downloaded).await;
-        assert_eq!(
-            f.downloader.resumes.current().last().unwrap().as_deref(),
-            Some(RESUME_TOKEN)
-        );
-        assert!(app.partial_downloads().is_empty());
     });
 }
 

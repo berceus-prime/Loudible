@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
-use crate::codec::optional_base64_bytes;
 use crate::{
     AudibleSession, Audiobook, Chapter, ContentLicense, Date, Decryption, ExporterError,
     LibraryPage, Marketplace, PendingLogin,
@@ -78,38 +77,16 @@ impl TransferProgress {
     }
 }
 
-/// Progress within one transfer attempt; fallback increments the attempt number.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct DownloadProgress {
-    pub attempt: i64,
-    pub transferred: TransferProgress,
-}
-
-/// Recovery state for an interrupted download. `resume_data` belongs to the downloader and may
-/// become unusable between launches.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DownloadRecovery {
-    #[serde(with = "optional_base64_bytes")]
-    pub resume_data: Option<Vec<u8>>,
-    pub progress: Option<TransferProgress>,
-}
-
-pub type RecoverySink = Arc<dyn Fn(DownloadRecovery) + Send + Sync>;
-pub type DownloadProgressSink = Arc<dyn Fn(DownloadProgress) + Send + Sync>;
+pub type DownloadProgressSink = Arc<dyn Fn(TransferProgress) + Send + Sync>;
 pub type ConversionProgressSink = Arc<dyn Fn(f64) + Send + Sync>;
 
-/// Downloads a URL completely to `destination`; interrupted bytes are managed by the adapter.
+/// Downloads a URL completely to `destination`, starting from byte zero.
 #[async_trait]
 pub trait FileDownloader: Send + Sync {
-    /// Attempts resumption, falling back once to `url` if it cannot resume. Recovery is reported
-    /// before returning, including on cancellation. No resume data means the next attempt must
-    /// restart. Callers decide whether to retain the recovery state.
     async fn download(
         &self,
         url: &Url,
         destination: &Path,
-        resume_data: Option<Vec<u8>>,
-        recovery: RecoverySink,
         progress: DownloadProgressSink,
         cancel: &CancellationToken,
     ) -> Result<(), ExporterError>;

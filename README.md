@@ -20,7 +20,7 @@ cargo run --bin webview_check -- --amazon   # Amazon's real page, by hand; never
 The port of the Swift app is growing here. The workspace's crates mirror the SwiftPM targets, so
 Cargo enforces the same layering. `MockApp` stays for the previews and `--mock`.
 
-Ported so far: `loudible-scheduling`, `loudible-core`, `loudible-adapters`, `loudible-ffmpeg` and
+Ported so far: `loudible-core`, `loudible-adapters`, `loudible-ffmpeg` and
 `loudible-presentation`, with their tests. Shared test doubles are
 in `loudible-test-support`.
 
@@ -37,8 +37,7 @@ Scripts/package.sh             # Linux or Windows (MSYS2): a portable folder in 
 Pushing a tag like `v1.2.0` runs `.github/workflows/release.yml`, which publishes a GitHub release
 with the DMG. The signing and notarization secrets and variables it needs are listed at its top.
 
-Without `Vendor/ffmpeg` (or `LOUDIBLE_FFMPEG_DIR`), `loudible-ffmpeg` builds empty and export is
-unavailable. To upgrade FFmpeg, follow the steps at the top of `Scripts/ffmpeg-version.sh`.
+Without `Vendor/ffmpeg` (or `LOUDIBLE_FFMPEG_DIR`), the build fails with setup instructions. To upgrade FFmpeg, follow the steps at the top of `Scripts/ffmpeg-version.sh`.
 
 ## Layout
 

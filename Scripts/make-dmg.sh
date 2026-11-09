@@ -31,8 +31,15 @@ if [ -z "${NOTARY_APPLE_ID:-}" ] || [ -z "${NOTARY_PASSWORD:-}" ] || [ -z "${NOT
     exit 0
 fi
 echo "Notarizing (usually a few minutes)…"
-xcrun notarytool submit "$DMG" --wait \
-    --apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$NOTARY_TEAM_ID"
+CREDENTIALS=(--apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$NOTARY_TEAM_ID")
+# notarytool exits 0 for a rejected submission too, so read its verdict.
+RESULT="$(xcrun notarytool submit "$DMG" --wait --output-format json "${CREDENTIALS[@]}")"
+field() { plutil -extract "$1" raw -o - - <<< "$RESULT"; }
+if [ "$(field status)" != "Accepted" ]; then
+    echo "error: notarization finished as '$(field status)'; Apple's log:" >&2
+    xcrun notarytool log "$(field id)" "${CREDENTIALS[@]}" >&2
+    exit 1
+fi
 xcrun stapler staple "$DMG"
 spctl --assess --type open --context context:primary-signature -vv "$DMG"
 echo "Built $DMG (signed and notarized)"

@@ -60,7 +60,6 @@ pub fn make_app_view(wake: Wake) -> Result<AppView<LiveApp>, String> {
         Arc::new(ReqwestDownloader::new().map_err(text)?),
         Arc::new(FfmpegConverter::new().map_err(text)?),
         downloads.clone(),
-        ExportQueue::DEFAULT_MAXIMUM_CONCURRENT_BOOKS,
     );
     let library = LibraryService::new(api, auth.clone(), LibraryService::DEFAULT_PAGE_SIZE);
     let waker = wake.clone();

@@ -10,9 +10,8 @@ use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use url::Url;
 
 use crate::audible_login_factory::app;
-use crate::content_metadata::{content_metadata_request, correct_chapters};
 use crate::json::{self, Json};
-use crate::library_response::{check_status, library_request, parse_library_page};
+use crate::library_response::{library_request, parse_library_page};
 use crate::license_response::{license_request, parse_license};
 use crate::{
     AudibleLoginFactory, HttpRequest, HttpResponse, HttpTransport, RandomSource, RequestSigner,
@@ -95,19 +94,7 @@ impl AudibleApi for AudibleHttpApi {
     ) -> Result<ContentLicense, ExporterError> {
         let request = self.signed(license_request(asin, marketplace), session)?;
         let response = self.transport.send(request).await?;
-        let parsed = parse_license(&response, asin, session)?;
-        let Some(reference) = parsed.reference else {
-            return Ok(parsed.license);
-        };
-        let request = content_metadata_request(asin, marketplace, &reference);
-        match self.transport.send(request).await {
-            Err(ExporterError::Cancelled) => Err(ExporterError::Cancelled),
-            Ok(metadata) if check_status(&metadata).is_ok() => {
-                Ok(correct_chapters(parsed.license, &reference, &metadata.body))
-            }
-            // Chapter correction is optional; a granted license still permits downloading the audio.
-            _ => Ok(parsed.license),
-        }
+        parse_license(&response, asin, session)
     }
 }
 

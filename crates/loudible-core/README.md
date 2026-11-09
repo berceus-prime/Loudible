@@ -7,10 +7,9 @@ HTTP, no keychain and no FFmpeg. Those sit behind the traits in `dependencies.rs
 ## Layering
 
 ```
-loudible-scheduling → loudible-core → loudible-adapters, loudible-ffmpeg → loudible-presentation → skia-ui
+loudible-core → loudible-adapters, loudible-ffmpeg → loudible-presentation → skia-ui
 ```
 
-* Depends on `loudible-scheduling` only, for `KeyedScheduler`.
 * Used by `loudible-adapters`, `loudible-ffmpeg`, `loudible-presentation`, `loudible-test-support`
   and the root crate.
 * Tests use the doubles in `loudible-test-support`.
@@ -23,7 +22,7 @@ Adapters implement these traits. Tests replace them.
 | --- | --- | --- |
 | `AudibleApi` | `make_login`, `register`, `refresh`, `library_page`, `license` | `library_page` takes any marketplace; one device registration works in every store. |
 | `CredentialStore` | `load`, `save`, `delete` the `AudibleSession` | Errors are plain strings. |
-| `FileDownloader` | Downloads a URL to a path | Tries to resume from `resume_data`, falls back once to a fresh download. Reports `DownloadRecovery` before returning, including on cancellation. |
+| `FileDownloader` | Downloads a URL to a path | Starts from byte zero and removes failed or cancelled staging bytes. |
 | `AudioConverter` | Decrypts and remuxes to M4B at `request.output` | Gets a `ConversionRequest`: input, output, `Decryption`, chapters, `BookMetadata`. |
 | `WallClock` | `now()` | `SystemClock` is the real one. |
 
@@ -74,16 +73,16 @@ The kept encrypted downloads. Two folders:
 | Folder | Holds |
 | --- | --- |
 | `folder` | Audio files `Title [ASIN].aax` / `.aaxc`, and hidden `.partial` staging files. |
-| `manifest_folder` | `<ASIN>.json` manifests, `<ASIN>.cover` images, `<ASIN>.partial` recovery records. Created with mode 0700; files 0600. |
+| `manifest_folder` | `<ASIN>.json` manifests, `<ASIN>.cover` images. Created with mode 0700; files 0600. |
 
 * A book is downloaded when a non-hidden `.aax`/`.aaxc` with `[ASIN]` in its name exists in
   `folder`. The audio file is the source of truth, not the manifest. The same scan finds exports
   (`scan_exports`). With several matches the first in name order wins.
-* Manifests and recovery records are written to a temporary file, then renamed into place.
+* Manifests are written to a temporary file, then renamed into place.
 * `remove_orphaned_manifests` deletes manifests whose ASIN isn't in the given set.
 * `trash_download` moves the audio file to the Trash (Recycle Bin on Windows) and deletes its
-  manifest and any partial download. Exports are not touched.
-* `sweep_partials` removes leftover partial files, except bytes a recovery record can still resume.
+  manifest and staging bytes. Exports are not touched.
+* `sweep_partials` removes leftover staging files and legacy recovery records.
 
 ### `ExportQueue`
 
@@ -93,15 +92,14 @@ Schedules download and export jobs. Must run inside a Tokio runtime. Cheap to cl
   shortcut. A book that already has an unfinished job of that kind is skipped, and so is a
   download of a book with an unfinished export. Returns `StartError` when there is nothing to
   queue or a folder isn't writable.
-* `cancel(id)`, `cancel_all`, `suspend` (like `cancel_all` but keeps recovery; for quit and
-  sign-out), `clear`, `resume_after_authentication`, `wait_until_finished`.
+* `cancel(id)`, `cancel_all`, `suspend` (cancels jobs on quit or sign-out), `clear`, `resume_after_authentication`, `wait_until_finished`.
 * `updates()` is a `watch` of `Snapshot` (jobs, `is_running`, `is_waiting_for_authentication`).
 
 Two workflows do the work:
 
 | Workflow | Steps |
 | --- | --- |
-| `DownloadWorkflow` | Already downloaded: done, no license. Otherwise: license, download to `.<ASIN>.download.partial`, fetch the cover (failure ignored), write the manifest, move to `Title [ASIN].<ext>`, delete the recovery record. |
+| `DownloadWorkflow` | Already downloaded: done, no license. Otherwise: license, download to `.<ASIN>.download.partial`, fetch the cover (failure ignored), write the manifest, move to `Title [ASIN].<ext>`, delete staging bytes. |
 | `BookExportWorkflow` | Runs `DownloadWorkflow` first. Keys come from the fresh license, else the manifest, else a new license (without downloading again). Converts to a hidden partial in the destination, then moves it to `Title [ASIN].m4b`. |
 
 ### Domain models
@@ -115,35 +113,29 @@ Two workflows do the work:
 | `PendingLogin`, `LoginCallback` | An in-progress sign-in and the redirect check. |
 | `ContentLicense`, `Decryption`, `Chapter` | A license. ADRM with a 4-byte key and no IV is AAX; 16-byte key and IV is AAXC; anything else is unsupported. |
 | `DownloadManifest` | Book, keys and chapters kept for offline export. |
-| `PartialDownload`, `DownloadRecovery`, `TransferProgress` | An unfinished download and its resume data. |
+| `TransferProgress` | Progress while a download is active. |
 | `ExportJob`, `JobKind`, `JobState`, `Phase` | One job and its checked state machine. |
 | `BookStatus`, `book_menu_items` | The status shown on a cover and the menu a book offers. |
 | `ExporterError` | Every error, with user-facing `Display` text. |
 
 ## Behaviour to keep
 
-**Ordering and concurrency.** Jobs are keyed by ASIN in a `KeyedScheduler`. Jobs for one book run
-strictly in queue order; up to `maximum_concurrent_books` (default 3) different books run at once.
-Jobs can be added while others run. A failed job doesn't stop the rest. Enqueuing when nothing is
-running drops the previous run's finished jobs.
+**Ordering and concurrency.** Download and export jobs run one at a time in FIFO order.
+Jobs can be added while another runs. A failed job does not stop the rest. Enqueuing when idle
+clears the previous run's finished jobs.
 
 **Job states.** `ExportJob::transition` rejects illegal moves. Finished states (`Completed`,
 `Failed`, `Cancelled`) are final. Phases (`Licensing` → `Downloading` → `Converting` →
-`Finalizing`) only move forward and progress within a phase never decreases. The one exception is
-a new download attempt (a higher `DownloadProgress::attempt`), which resets download progress. A
-job may start in any phase; its `first_phase` is the origin of `fraction_completed`.
+`Finalizing`) only move forward and progress within a phase never decreases. A job waiting for
+authentication can restart from licensing. A job may start in any phase; its `first_phase` is the
+origin of `fraction_completed`.
 
-**Re-authentication.** When a job hits `AuthenticationRequired` it goes to
-`WaitingForAuthentication`, the scheduler pauses and no new job starts.
-`resume_after_authentication` wakes every paused job, which restarts from `Licensing`. If still
-signed out it pauses again. Cancelling a paused job ends it; when no paused job remains the
-scheduler unpauses.
+**Re-authentication.** A job needing sign-in holds the only active slot. On
+`resume_after_authentication`, it restarts from licensing. Cancelling it admits the next job.
 
-**Partial downloads.** Before downloading, a fresh `PartialDownload` record is written. An existing
-record is reused only if customer id, ASIN, extension and `Decryption` all match; otherwise it and
-its bytes are discarded. Failure and `suspend` keep the record and bytes; explicit cancellation
-deletes them. Resumption is best effort. The license is always fresh, because its download URL
-expires.
+**Incomplete downloads.** Each attempt gets a fresh license and starts at byte zero. Failures,
+cancellation and suspension discard staging bytes. Startup removes old staging files and legacy
+recovery records.
 
 **File naming** (`export_file_naming`).
 
@@ -157,7 +149,7 @@ expires.
 * Files in progress are hidden: `.<base>.<uuid>.partial` for conversions,
   `.<ASIN>.download.partial` for downloads.
 
-**Key material.** Manifests and recovery records hold decryption keys, so they live in
+**Key material.** Manifests hold decryption keys, so they live in
 `manifest_folder`, outside the user-visible download folder, readable by the owner only.
 Binary fields are base64 in the JSON. The session (tokens, device private key) is not written by
 this crate; persisting it is `CredentialStore`'s job.
@@ -173,21 +165,21 @@ case- and diacritic-insensitive matching, and `localizedStandardCompare` orderin
 
 | Module | Contents |
 | --- | --- |
-| `dependencies` | Port traits, `TransferProgress`, `DownloadRecovery`, `ConversionRequest`, `BookMetadata`. |
+| `dependencies` | Port traits, `TransferProgress`, `ConversionRequest`, `BookMetadata`. |
 | `authentication_coordinator` | `AuthenticationCoordinator`, `AuthState`. |
 | `library` | `LibraryService`, ownership filtering, search, merge, `LibrarySelection`, `MarketplaceScan`. |
-| `local_downloads` | `LocalDownloads`: scanning, manifests, recovery records, Trash, sweeping. |
+| `local_downloads` | `LocalDownloads`: scanning, manifests, Trash, staging cleanup. |
 | `export_queue/mod.rs` | `ExportQueue`, `Snapshot`, `StartError`. |
 | `export_queue/state.rs` | Snapshot updates and progress events; ignores stale download callbacks. |
 | `export_queue/download_workflow.rs` | `DownloadWorkflow`. |
 | `export_queue/book_export_workflow.rs` | `BookExportWorkflow`. |
 | `export_queue/license_provider.rs` | License through `with_valid_session`. |
 | `export_queue/file_finalizer.rs` | No-overwrite move into the first free name. |
-| `export_queue/execution_context.rs` | Progress callback, cancellation token, recovery policy for a workflow. |
+| `export_queue/execution_context.rs` | Progress callback and cancellation token for a workflow. |
 | `export_job` | `ExportJob` state machine and progress weighting. |
 | `export_file_naming` | File names, sanitizing, ASIN tags, partial names. |
 | `book_status` | `BookStatus`, `BookAction`, `book_menu_items`. |
-| `audiobook`, `marketplace`, `audible_session`, `pending_login`, `content_license`, `download_manifest`, `partial_download` | Domain models. |
+| `audiobook`, `marketplace`, `audible_session`, `pending_login`, `content_license`, `download_manifest` | Domain models. |
 | `exporter_error` | `ExporterError`. |
 | `text` | Swift-compatible text rules. |
 | `codec`, `hex_encoding` | Base64 fields in JSON, lowercase hex. |
@@ -202,8 +194,8 @@ cargo test -p loudible-core
 | --- | --- |
 | `tests/authentication_coordinator.rs` | Sign-in, callbacks, refresh, re-authentication, storage warnings. |
 | `tests/library.rs` | Paging, ownership rules, other marketplaces, search, selection. |
-| `tests/local_downloads.rs` | Scanning, manifests, orphans, Trash, sweeping, recovery records. |
-| `tests/export_queue.rs` | Ordering, concurrency, cancel, suspend, auth pause, recovery, naming, workflows. |
+| `tests/local_downloads.rs` | Scanning, manifests, orphans, Trash, sweeping, legacy record cleanup. |
+| `tests/export_queue.rs` | FIFO ordering, cancellation, auth pause, fresh downloads, naming, workflows. |
 | `tests/export_job.rs` | State transitions and progress. |
 | `tests/export_file_naming.rs` | Sanitizing, length limits, collisions, ASIN tags. |
 | `tests/book_status.rs` | Cover status priority and menu items. |

@@ -73,14 +73,12 @@ Query items are percent-encoded the way Audible's signed requests expect; `+` is
 | `library_response` | Library pages. Items without an ASIN are skipped; a missing title falls back to the ASIN. `Total-Count` gives the total. `check_status` maps errors for all API responses. |
 | `license_response` | Licenses. 403/404 and non-`Granted` statuses become `LicenseDenied` with Audible's messages and denial reasons. Only `Adrm` is accepted; anything else is `UnsupportedDrm`. The download URL must be `https`. |
 | `license_response::voucher` | The AES-128-CBC voucher holding the content key and IV. Its key and IV are the halves of SHA-256(device type, serial, customer id, ASIN). NUL padding and trailing bytes are tolerated. |
-| `content_metadata` | Chapter correction. Chapters from the metadata replace the license's only when the content reference (ACR, file version and the rest) matches exactly and every chapter is valid. |
 | `json` | `Json`, a lenient read-only view. Missing keys and type mismatches are `None`; numbers and numeric strings both read as integers. |
 
 Chapter trees are flattened in playback order. A parent with its own segment stays a chapter;
 zero-length entries are dropped.
 
-Chapter correction is optional. If the metadata request fails or returns something unusable,
-`license` returns the original chapters. Only cancellation is passed on.
+Licensing uses the chapters included in the license response and makes no second metadata request.
 
 ## Credentials
 
@@ -117,21 +115,9 @@ at once.
 * No referer, no cookie store, system proxy settings.
 * Error messages drop the URL, because download URLs carry access tokens.
 
-`ReqwestDownloader` writes straight into the destination and sends only the Audible player's user
-agent. When a transfer stops it reports `DownloadRecovery` with a resume token (JSON: URL, strong
-ETag or `Last-Modified`, bytes received, total).
-
-* A token is made only if bytes arrived, the server has a strong validator and did not send
-  `Accept-Ranges: none`. Weak ETags do not count.
-* Resuming sends `Range` and `If-Range` to the token's URL. A 206 must start at the saved position;
-  the file is truncated there before writing.
-* A 200 in reply to a resume restarts the file within the same attempt.
-* If a resume fails with an HTTP status or network error, or the token is unusable (bad version,
-  file missing or shorter than the token says), it gets one fresh attempt at the supplied URL.
-* An HTTP status rejection discards the token and the partial file. A dropped connection or
-  cancellation keeps them if a token could be made.
-* Recovery is cleared before a transfer starts, so a crash cannot reuse a stale token.
-* Progress is reported at most every 100 ms, with an `attempt` number of 0 or 1.
+`ReqwestDownloader` downloads from byte zero, sends only the Audible player's user agent,
+reports progress at most every 100 ms, and removes the destination on failure or cancellation.
+A later attempt gets a fresh URL and starts over.
 
 ## Modules
 
@@ -142,10 +128,9 @@ ETag or `Last-Modified`, bytes received, total).
 | `request_signer` | `RequestSigner`, `SigningError`. |
 | `library_response` | Library request, parsing, `check_status`. |
 | `license_response` | License request and parsing, chapter flattening, `voucher`. |
-| `content_metadata` | `ContentReference`, metadata request, `correct_chapters`. |
 | `credentials` | `SecretStore` and its stores, `EncryptedFileCredentialStore`, `default_credential_store`. |
 | `http_transport` | `HttpRequest`, `HttpResponse`, `HttpTransport`, `ReqwestTransport`, shared client setup. |
-| `reqwest_downloader` | `ReqwestDownloader` and resume tokens. |
+| `reqwest_downloader` | `ReqwestDownloader` for fresh transfers. |
 | `random` | `RandomSource`, `SystemRandomSource`. |
 | `json` | The lenient `Json` view. |
 
@@ -160,9 +145,9 @@ cargo test -p loudible-adapters
 | `tests/authentication.rs` | PKCE, login URLs and cookies, serials, signing against OpenSSL vectors, registration and refresh. |
 | `tests/library.rs` | Signed library requests, parsing, error mapping. |
 | `tests/license.rs` | Voucher decryption, AAXC and AAX licenses, denials, unsupported DRM. |
-| `tests/chapter_correction.rs` | Chapter correction, its fallbacks, and corrected chapters reaching export. |
+| `tests/chapter_correction.rs` | License chapters with exactly one HTTP request. |
 | `tests/credentials.rs` | Encryption at rest, file permissions, timeouts, key file opt-in. Uses an in-memory secret store, never the real keyring. |
-| `tests/download_recovery.rs` | Resume, fallback and cleanup, against a loopback HTTP server. |
+| `tests/download_recovery.rs` | Fresh transfer and cleanup against a loopback HTTP server. |
 | `tests/support/mod.rs` | `MockTransport`, a predictable `RandomSource`, fixture helpers. |
 
 Nothing contacts Audible. All fixtures in `tests/fixtures/` are synthetic, including the device

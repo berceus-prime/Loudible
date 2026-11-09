@@ -243,6 +243,37 @@ fn rejects_invalid_keys() {
         error("-----BEGIN RSA PRIVATE KEY-----\nAAAA\n-----END RSA PRIVATE KEY-----"),
         SigningError::KeyCreationFailed(_)
     ));
+    assert_eq!(
+        error("-----BEGIN RSA PRIVATE KEY-----\n!!not base64!!\n-----END RSA PRIVATE KEY-----"),
+        SigningError::InvalidPem
+    );
+    assert_eq!(
+        error("-----BEGIN RSA PRIVATE KEY-----\nAAAA\n"),
+        SigningError::InvalidPem
+    );
+    assert_eq!(
+        error("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----"),
+        SigningError::UnsupportedKeyFormat
+    );
+}
+
+#[test]
+fn reads_a_key_among_other_text() {
+    let fixture = json("signing-vectors.json");
+    let pem = format!(
+        "Device key:\n{}\nEnd of export\n",
+        text("synthetic-device-key.pem")
+    );
+    let signer = RequestSigner::new(fixture["adp_token"].as_str().unwrap(), &pem).unwrap();
+    let vector = &fixture["vectors"][0];
+    let [method, path, timestamp, body, expected] =
+        ["method", "path", "timestamp", "body", "signature"].map(|k| vector[k].as_str().unwrap());
+    assert_eq!(
+        signer
+            .signature(method, path, timestamp, body.as_bytes())
+            .unwrap(),
+        expected
+    );
 }
 
 fn uk_login() -> PendingLogin {

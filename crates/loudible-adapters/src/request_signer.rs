@@ -2,6 +2,7 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use loudible_core::Date;
 use ring::rand::SystemRandom;
 use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
+use rustls_pki_types::pem::{self, SectionKind};
 use url::Url;
 
 use crate::HttpRequest;
@@ -78,29 +79,16 @@ impl RequestSigner {
         date.format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string()
     }
 
+    /// The first PEM block in `pem`, as a PKCS#1 or PKCS#8 RSA key.
     pub fn make_key(pem: &str) -> Result<RsaKeyPair, SigningError> {
-        let lines: Vec<&str> = pem
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty())
-            .collect();
-        let header = lines
-            .first()
-            .filter(|line| line.starts_with("-----BEGIN "))
-            .ok_or(SigningError::InvalidPem)?;
-        let body: String = lines
-            .iter()
-            .filter(|line| !line.starts_with("-----"))
-            .copied()
-            .collect();
-        let der = STANDARD
-            .decode(body)
+        let (kind, der) = pem::from_buf(&mut pem.as_bytes())
             .ok()
-            .filter(|der| !der.is_empty())
+            .flatten()
+            .filter(|(_, der)| !der.is_empty())
             .ok_or(SigningError::InvalidPem)?;
-        let key = match *header {
-            "-----BEGIN RSA PRIVATE KEY-----" => RsaKeyPair::from_der(&der),
-            "-----BEGIN PRIVATE KEY-----" => RsaKeyPair::from_pkcs8(&der),
+        let key = match kind {
+            SectionKind::RsaPrivateKey => RsaKeyPair::from_der(&der),
+            SectionKind::PrivateKey => RsaKeyPair::from_pkcs8(&der),
             _ => return Err(SigningError::UnsupportedKeyFormat),
         };
         key.map_err(|error| SigningError::KeyCreationFailed(error.to_string()))

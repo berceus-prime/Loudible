@@ -83,7 +83,7 @@ fn tolerates_padding_and_trailing_bytes() {
 }
 
 fn parse(body: Vec<u8>, status: u16, asin: &str) -> Result<ContentLicense, ExporterError> {
-    parse_license(&response(status, body), asin, &session()).map(|parsed| parsed.license)
+    parse_license(&response(status, body), asin, &session())
 }
 
 fn parse_fixture(name: &str, asin: &str) -> Result<ContentLicense, ExporterError> {

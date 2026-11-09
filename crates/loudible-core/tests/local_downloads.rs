@@ -64,20 +64,6 @@ fn manifest(asin: &str) -> DownloadManifest {
     )
 }
 
-fn partial(asin: &str, token: Option<&[u8]>) -> PartialDownload {
-    PartialDownload::new(
-        book(asin),
-        "amzn1.account.SYNTHETIC",
-        "aaxc",
-        DownloadRecovery {
-            resume_data: token.map(<[u8]>::to_vec),
-            progress: Some(TransferProgress::new(2, 4)),
-        },
-        license(asin).decryption,
-        reference_date(),
-    )
-}
-
 fn sorted_keys(map: &std::collections::HashMap<String, PathBuf>) -> Vec<String> {
     let mut keys: Vec<String> = map.keys().cloned().collect();
     keys.sort();
@@ -204,59 +190,32 @@ fn sweep_removes_only_partials() {
 }
 
 #[test]
-fn recovery_survives_reload_without_an_audio_file() {
+fn sweep_discards_legacy_recovery_and_staging_files() {
     let f = Fixture::new();
-    f.downloads
-        .write_partial_download(&partial("B1", Some(RESUME_TOKEN)))
-        .unwrap();
-    f.downloads
-        .write_partial_download(&partial("B2", None))
-        .unwrap();
     f.touch(".B1.download.partial");
     f.touch(".B3.download.partial");
+    f.touch_in("B1.partial", &f.downloads.manifest_folder);
+    f.touch_in("B2.partial", &f.downloads.manifest_folder);
     f.touch_in(".B4.1234.cover", &f.downloads.manifest_folder);
     f.touch_in(".B4.json.5678.tmp", &f.downloads.manifest_folder);
+    // As `tempfile` names a manifest write a crash left behind.
+    f.touch_in(".B5.json.aB3xZ9.tmp", &f.downloads.manifest_folder);
     f.downloads.write_manifest(&manifest("B4"), None).unwrap();
     let reloaded = LocalDownloads::new(
         f.downloads.folder.clone(),
         f.downloads.manifest_folder.clone(),
     );
-    f.touch(".B2.download.partial");
     reloaded.sweep_partials();
-    // Only a record with a resume token can use its bytes.
-    assert_eq!(contents_of(&f.downloads.folder), [".B1.download.partial"]);
-    assert_eq!(f.manifest_files(), ["B1.partial", "B2.partial", "B4.json"]);
-    assert_eq!(
-        reloaded.partial_downloads(),
-        [partial("B1", Some(RESUME_TOKEN)), partial("B2", None)]
-    );
-    assert_eq!(
-        reloaded.partial_progress(&partial("B1", Some(RESUME_TOKEN))),
-        TransferProgress::new(2, 4)
-    );
+    assert!(contents_of(&f.downloads.folder).is_empty());
+    assert_eq!(f.manifest_files(), ["B4.json"]);
 }
 
 #[test]
-fn recovery_record_round_trips_privately_and_is_no_manifest() {
+fn removing_staging_also_removes_legacy_record() {
     let f = Fixture::new();
-    let record = partial("B1", Some(RESUME_TOKEN));
-    f.downloads.write_partial_download(&record).unwrap();
-    assert_eq!(f.downloads.partial_download("B1"), Some(record));
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mode = fs::metadata(f.downloads.manifest_folder.join("B1.partial"))
-            .unwrap()
-            .permissions()
-            .mode();
-        assert_eq!(mode & 0o777, 0o600);
-    }
-    assert!(f.downloads.manifests().is_empty());
-    assert!(
-        f.downloads
-            .remove_orphaned_manifests(&HashSet::new())
-            .is_empty()
-    );
+    f.touch(".B1.download.partial");
+    f.touch_in("B1.partial", &f.downloads.manifest_folder);
     f.downloads.remove_partial_download("B1");
+    assert!(contents_of(&f.downloads.folder).is_empty());
     assert!(f.manifest_files().is_empty());
 }

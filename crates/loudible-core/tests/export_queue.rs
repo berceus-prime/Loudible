@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
 
 use loudible_core::JobState::*;
 use loudible_core::export_file_naming::is_partial;
@@ -73,7 +72,7 @@ impl Fixture {
         &self,
         auth: AuthenticationCoordinator,
         downloads: LocalDownloads,
-        maximum: usize,
+        _maximum: usize,
     ) -> ExportQueue {
         ExportQueue::new(
             auth,
@@ -81,7 +80,6 @@ impl Fixture {
             self.downloader.clone(),
             self.converter.clone(),
             downloads,
-            maximum,
         )
     }
 
@@ -253,10 +251,9 @@ fn books(count: usize) -> Vec<Audiobook> {
         .collect()
 }
 
-fn context(keep_recovery: bool, cancel: CancellationToken) -> ExportExecutionContext {
+fn context(_keep_recovery: bool, cancel: CancellationToken) -> ExportExecutionContext {
     ExportExecutionContext {
         report: Arc::new(|_| {}),
-        keeps_recovery: Arc::new(move || keep_recovery),
         cancel,
     }
 }
@@ -375,7 +372,6 @@ async fn cancellation_during_finalizing_removes_output_and_keeps_download() {
                 trigger.cancel();
             }
         }),
-        keeps_recovery: Arc::new(|| false),
         cancel,
     };
     assert_eq!(
@@ -425,10 +421,9 @@ async fn direct_download_persists_manifest_and_reuses_file() {
         f.api.requested_licenses.current(),
         std::slice::from_ref(&book.asin)
     );
-    assert!(f.downloads.partial_downloads().is_empty());
 }
 
-async fn cancellation_applies_recovery_policy(keep: bool) {
+async fn cancellation_discards_staging(keep: bool) {
     let f = Fixture::new();
     let workflow = f.workflow();
     let started = AsyncGate::default();
@@ -457,22 +452,23 @@ async fn cancellation_applies_recovery_policy(keep: bool) {
     cancel.cancel();
     cleanup.open();
     let _ = run.await.unwrap();
-    assert_eq!(f.downloads.partial_download(B1).is_some(), keep);
+    assert!(f.downloads_contents().is_empty());
+    assert!(f.manifest_contents().is_empty());
     assert!(f.downloads_contents().is_empty());
 }
 
 #[tokio::test]
 async fn cancellation_discards_recovery() {
-    cancellation_applies_recovery_policy(false).await;
+    cancellation_discards_staging(false).await;
 }
 
 #[tokio::test]
-async fn suspension_keeps_recovery() {
-    cancellation_applies_recovery_policy(true).await;
+async fn suspension_discards_staging() {
+    cancellation_discards_staging(true).await;
 }
 
 #[tokio::test]
-async fn failure_keeps_recovery_and_next_run_resumes() {
+async fn failure_discards_staging_and_next_run_restarts() {
     let f = Fixture::new();
     let workflow = f.workflow();
     let book = &books(1)[0];
@@ -488,10 +484,8 @@ async fn failure_keeps_recovery_and_next_run_resumes() {
         .run(book, JobKind::Download, &plain_context())
         .await
         .unwrap();
-    assert_eq!(
-        f.downloader.resumes.current().last().unwrap().as_deref(),
-        Some(RESUME_TOKEN)
-    );
+    assert_eq!(f.downloader.downloads.current().len(), 2);
+    assert_eq!(f.api.requested_licenses.current(), [B1, B1]);
 }
 
 // MARK: File finalizer
@@ -560,18 +554,14 @@ async fn pauses_for_authentication_and_resumes_after_sign_in() {
 }
 
 #[tokio::test]
-async fn several_jobs_pause_for_authentication_and_all_resume() {
+async fn waiting_job_holds_queue_until_authentication_resumes() {
     let f = Fixture::new();
     f.fail_refresh_until_signed_in();
     let (queue, auth) = f.queue(3);
     queue.enqueue(&books(2), JobKind::Download, None).unwrap();
     let watched = queue.clone();
-    wait_until(move || {
-        states(&watched.current_snapshot())
-            .iter()
-            .all(|s| *s == WaitingForAuthentication)
-    })
-    .await;
+    wait_until(move || states(&watched.current_snapshot()) == [WaitingForAuthentication, Queued])
+        .await;
     assert!(queue.current_snapshot().is_waiting_for_authentication);
 
     auth.begin_login(Marketplace::US).unwrap();
@@ -908,29 +898,18 @@ async fn download_then_export_of_one_book_run_in_order_and_share_the_file() {
 }
 
 #[tokio::test]
-async fn different_books_run_in_parallel_up_to_the_cap() {
+async fn only_one_job_runs_at_a_time() {
     let f = Fixture::new();
-    let gate = AsyncGate::default();
-    let in_flight = Arc::new(Locked::new((0, 0)));
-    let (counter, held) = (in_flight.clone(), gate.clone());
-    f.downloader.on_download(move |_, destination, _| {
-        let (counter, held) = (counter.clone(), held.clone());
-        async move {
-            counter.with(|(now, peak)| {
-                *now += 1;
-                *peak = (*peak).max(*now);
-            });
-            held.wait().await;
-            counter.with(|(now, _)| *now -= 1);
-            write(&destination, "")
-        }
-    });
+    let gate = f.hold_downloads();
     let (queue, _) = f.queue(3);
-    queue.enqueue(&books(5), JobKind::Download, None).unwrap();
-    let watched = in_flight.clone();
-    wait_until(move || watched.current().0 == 3).await;
-    tokio::time::sleep(Duration::from_millis(50)).await;
-    assert_eq!(in_flight.current().1, 3);
+    let all = books(3);
+    queue.enqueue(&all[..2], JobKind::Download, None).unwrap();
+    queue
+        .enqueue(&all[2..], JobKind::Export, Some(f.destination.path()))
+        .unwrap();
+    f.wait_for_downloads(1).await;
+    assert_eq!(f.downloader.downloads.current().len(), 1);
+    assert!(f.converter.requests.current().is_empty());
     assert_eq!(
         states(&queue.current_snapshot())
             .iter()
@@ -940,8 +919,8 @@ async fn different_books_run_in_parallel_up_to_the_cap() {
     );
     gate.open();
     queue.wait_until_finished().await;
-    assert_eq!(in_flight.current().1, 3);
-    assert_eq!(f.downloads_contents().len(), 5);
+    assert_eq!(f.downloader.downloads.current().len(), 3);
+    assert_eq!(f.converter.requests.current().len(), 1);
 }
 
 #[tokio::test]
@@ -1222,7 +1201,7 @@ async fn failure_continues_with_next_book_and_keeps_completed_exports() {
     );
 }
 
-async fn download_failure_keeps_recovery_for_the_next_download(kind: JobKind) {
+async fn failed_download_discards_staging(kind: JobKind) {
     let f = Fixture::new();
     f.fail_downloads();
     let snapshot = f.run(&books(1), kind).await;
@@ -1231,32 +1210,22 @@ async fn download_failure_keeps_recovery_for_the_next_download(kind: JobKind) {
         [Failed("Book 1: Download failed: HTTP 500".into())]
     );
     assert!(f.downloads_contents().is_empty());
-    assert_eq!(f.manifest_contents(), ["B000000001.partial"]);
-    let record = f.downloads.partial_download(B1).unwrap();
-    assert_eq!(record.customer_id, session().customer_id);
-    assert_eq!(
-        record.recovery,
-        DownloadRecovery {
-            resume_data: Some(RESUME_TOKEN.to_vec()),
-            progress: Some(TransferProgress::new(50, 100)),
-        }
-    );
+    assert!(f.manifest_contents().is_empty());
     assert!(f.destination.contents().is_empty());
-    assert!(f.converter.requests.current().is_empty());
 }
 
 #[tokio::test]
-async fn download_job_failure_keeps_recovery() {
-    download_failure_keeps_recovery_for_the_next_download(JobKind::Download).await;
+async fn download_job_failure_discards_staging() {
+    failed_download_discards_staging(JobKind::Download).await;
 }
 
 #[tokio::test]
-async fn export_job_failure_keeps_recovery() {
-    download_failure_keeps_recovery_for_the_next_download(JobKind::Export).await;
+async fn export_job_failure_discards_staging() {
+    failed_download_discards_staging(JobKind::Export).await;
 }
 
 #[tokio::test]
-async fn next_download_reuses_recovery_with_a_fresh_license() {
+async fn next_download_starts_fresh_with_a_fresh_license() {
     let f = Fixture::new();
     f.fail_downloads();
     let (queue, _) = f.queue(1);
@@ -1266,104 +1235,25 @@ async fn next_download_reuses_recovery_with_a_fresh_license() {
         .on_download(|_, destination, _| async move { write(&destination, "encrypted") });
     queue.enqueue(&books(1), JobKind::Download, None).unwrap();
     queue.wait_until_finished().await;
-
-    assert_eq!(
-        states(&queue.current_snapshot()),
-        [Completed(
-            f.downloads.folder.join("Book 1 [B000000001].aaxc")
-        )]
-    );
-    let resumes = f.downloader.resumes.current();
-    assert_eq!(resumes.first().unwrap(), &None);
-    assert_eq!(resumes.last().unwrap().as_deref(), Some(RESUME_TOKEN));
     assert_eq!(f.api.requested_licenses.current(), [B1, B1]);
+    assert_eq!(f.downloader.downloads.current().len(), 2);
     assert_eq!(f.downloads_contents(), ["Book 1 [B000000001].aaxc"]);
     assert_eq!(f.manifest_contents(), ["B000000001.json"]);
 }
 
-fn recovery_record(customer: &str, decryption: Decryption) -> PartialDownload {
-    PartialDownload::new(
-        books(1).remove(0),
-        customer,
-        "aaxc",
-        DownloadRecovery {
-            resume_data: Some(RESUME_TOKEN.to_vec()),
-            progress: None,
-        },
-        decryption,
-        reference_date(),
-    )
-}
-
 #[tokio::test]
-async fn another_accounts_recovery_is_discarded() {
-    let f = Fixture::new();
-    f.downloads.ensure_folder().unwrap();
-    std::fs::write(f.downloads.partial_file_path(B1), "theirs").unwrap();
-    f.downloads
-        .write_partial_download(&recovery_record(
-            "amzn1.account.SOMEONE.ELSE",
-            license(B1).decryption,
-        ))
-        .unwrap();
-    let snapshot = f.run(&books(1), JobKind::Download).await;
-    let file = f.downloads.folder.join("Book 1 [B000000001].aaxc");
-    assert_eq!(states(&snapshot), [Completed(file.clone())]);
-    assert_eq!(f.downloader.resumes.current(), [None]);
-    assert_eq!(std::fs::read(file).unwrap(), b"encrypted");
-    assert_eq!(f.manifest_contents(), ["B000000001.json"]);
-}
-
-#[tokio::test]
-async fn incompatible_license_discards_the_token() {
-    let f = Fixture::new();
-    f.downloads.ensure_folder().unwrap();
-    let other_keys = Decryption::Aaxc {
-        key: vec![99; 16],
-        iv: vec![98; 16],
-    };
-    f.downloads
-        .write_partial_download(&recovery_record(&session().customer_id, other_keys))
-        .unwrap();
-    f.run(&books(1), JobKind::Download).await;
-    assert_eq!(f.downloader.resumes.current(), [None]);
-    assert!(f.downloads.partial_downloads().is_empty());
-}
-
-async fn suspend_during_download_keeps_recovery(kind: JobKind) {
+async fn suspend_discards_incomplete_download() {
     let f = Fixture::new();
     let gate = f.interrupt_downloads();
     let (queue, _) = f.queue(1);
-    queue
-        .enqueue(&books(2), kind, Some(f.destination.path()))
-        .unwrap();
+    queue.enqueue(&books(2), JobKind::Download, None).unwrap();
     f.wait_for_downloads(1).await;
     queue.suspend();
     gate.open();
     queue.wait_until_finished().await;
     assert_eq!(states(&queue.current_snapshot()), [Cancelled, Cancelled]);
     assert!(f.downloads_contents().is_empty());
-    assert_eq!(f.manifest_contents(), ["B000000001.partial"]);
-    assert_eq!(
-        f.downloads
-            .partial_download(B1)
-            .unwrap()
-            .recovery
-            .resume_data
-            .as_deref(),
-        Some(RESUME_TOKEN)
-    );
-    assert!(f.destination.contents().is_empty());
-}
-
-#[tokio::test]
-async fn suspending_a_download_job_keeps_recovery() {
-    suspend_during_download_keeps_recovery(JobKind::Download).await;
-}
-
-#[tokio::test]
-async fn suspending_an_export_job_keeps_recovery() {
-    suspend_during_download_keeps_recovery(JobKind::Export).await;
+    assert!(f.manifest_contents().is_empty());
 }
 
 #[tokio::test]
@@ -1427,14 +1317,8 @@ fn progress_state() -> (ExportQueueState, Uuid, Uuid) {
     (state, id, invocation)
 }
 
-fn progress(invocation: Uuid, attempt: i64, bytes: i64) -> ExportProgressEvent {
-    ExportProgressEvent::Download(
-        invocation,
-        DownloadProgress {
-            attempt,
-            transferred: TransferProgress::new(bytes, 100),
-        },
-    )
+fn progress(invocation: Uuid, bytes: i64) -> ExportProgressEvent {
+    ExportProgressEvent::Download(invocation, TransferProgress::new(bytes, 100))
 }
 
 fn received(state: &ExportQueueState) -> Option<i64> {
@@ -1444,56 +1328,25 @@ fn received(state: &ExportQueueState) -> Option<i64> {
 }
 
 #[test]
-fn fallback_resets_bytes_and_ignores_older_attempts() {
+fn reports_active_download_progress() {
     let (mut state, id, invocation) = progress_state();
-    state.report(id, progress(invocation, 0, 80));
+    state.report(id, progress(invocation, 80));
     assert_eq!(received(&state), Some(80));
-    state.report(id, progress(invocation, 1, 0));
-    assert_eq!(
-        *state.snapshot.jobs[0].state(),
-        Running(Phase::Downloading, 0.0)
-    );
-    assert_eq!(received(&state), Some(0));
-    state.report(id, progress(invocation, 1, 10));
-    state.report(id, progress(invocation, 0, 95));
-    state.report(id, progress(invocation, 1, 5));
-    assert_eq!(
-        *state.snapshot.jobs[0].state(),
-        Running(Phase::Downloading, 0.1)
-    );
-    assert_eq!(received(&state), Some(10));
-    assert_eq!(
-        state.snapshot.jobs[0].first_phase(),
-        Some(Phase::Downloading)
-    );
-}
-
-#[test]
-fn completed_error_body_does_not_stick_at_full_progress() {
-    let (mut state, id, invocation) = progress_state();
-    state.report(id, progress(invocation, 0, 100));
-    // A callback for the new attempt can arrive before its initial zero event.
-    state.report(id, progress(invocation, 1, 10));
-    state.report(id, progress(invocation, 1, 0));
-    assert_eq!(
-        *state.snapshot.jobs[0].state(),
-        Running(Phase::Downloading, 0.1)
-    );
 }
 
 #[test]
 fn ended_invocations_and_finished_jobs_reject_callbacks() {
     let (mut state, id, invocation) = progress_state();
     state.report(id, ExportProgressEvent::EndDownload(invocation));
-    state.report(id, progress(invocation, 1, 90));
+    state.report(id, progress(invocation, 90));
     assert_eq!(received(&state), None);
     let next = Uuid::new_v4();
     state.report(id, ExportProgressEvent::BeginDownload(next));
-    state.report(id, progress(next, 0, 20));
-    state.report(id, progress(invocation, 2, 100));
+    state.report(id, progress(next, 20));
+    state.report(id, progress(invocation, 100));
     assert_eq!(received(&state), Some(20));
     state.update(id, Cancelled);
-    state.report(id, progress(next, 1, 99));
+    state.report(id, progress(next, 99));
     assert_eq!(*state.snapshot.jobs[0].state(), Cancelled);
 }
 

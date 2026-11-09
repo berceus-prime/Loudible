@@ -17,7 +17,7 @@ It depends on `loudible-core` and implements its traits (`WallClock`, `Credentia
 | `TestClock` | A `WallClock` that starts at `reference_date()` and moves only through `advance(seconds)`. |
 | `InMemoryCredentialStore` | A `CredentialStore` over `stored`. `fail_load`, `fail_save` and `fail_delete` make each call fail; `save_count` counts saves. `with(session)` starts signed in. |
 | `MockAudibleApi` | A scriptable `AudibleApi`. See below. |
-| `MockDownloader` | A `FileDownloader` that records `downloads` and `resumes`. By default it writes `encrypted` to the destination. Reports progress at 50 and 100 of 100. When the handler fails it removes the file and reports recovery with `RESUME_TOKEN` at 50 of 100. Replace the handler with `on_download`. |
+| `MockDownloader` | A `FileDownloader` that records `downloads`. By default it writes `encrypted` to the destination. Reports progress at 50 and 100 of 100. When the handler fails it removes the file. Replace the handler with `on_download`. |
 | `MockConverter` | An `AudioConverter` that records `requests` and by default writes `m4b:<asin>` to the output. Reports progress 0.5 and 1.0. Replace the handler with `on_convert`. |
 | `AsyncGate` | Holds callers in `wait()` until `open()`. Clones share the gate. Used to stop a mocked download or conversion mid-flight. |
 | `TemporaryDirectory` | A unique directory removed on drop, with `path`, `join` and `contents`. |
@@ -50,7 +50,6 @@ and session.
 | `check(&cancel)` | `Err(ExporterError::Cancelled)` once the token is cancelled, like Swift's `Task.checkCancellation()`. |
 | `write(path, contents)` | Writes a file, mapping errors to `ExporterError::FileSystem`. |
 | `contents_of(directory)` | Sorted names in a directory, hidden files included; empty if it doesn't exist. |
-| `RESUME_TOKEN` | The synthetic resume data `MockDownloader` reports. |
 
 ## Fixtures
 

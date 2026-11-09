@@ -53,7 +53,6 @@ fn draw_status_badge(ui: &mut Ui, status: &BookStatus, center: Point) {
         .draw_circle(center, 13.0, &fill(Color::new(0x9900_0000)));
     match status {
         BookStatus::Queued(_) => ui.icon(Icon::Clock, center, 15.0, Color::WHITE),
-        BookStatus::Paused(_) => ui.icon(Icon::PauseCircleFill, center, 16.0, Color::WHITE),
         BookStatus::Downloaded => ui.icon(Icon::ArrowDownCircleFill, center, 16.0, Color::WHITE),
         BookStatus::Running { kind, progress, .. } => {
             let color = if *kind == JobKind::Export {

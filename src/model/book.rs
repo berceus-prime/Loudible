@@ -73,7 +73,7 @@ impl Audiobook {
     }
 }
 
-/// Bytes of a download received so far, or kept for the next attempt.
+/// Bytes received during an active download.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TransferProgress {
     pub received: u64,
@@ -108,13 +108,11 @@ pub enum BookStatus {
         progress: f32,
         transferred: Option<TransferProgress>,
     },
-    /// The latest attempt failed; `kept` is the part of the download kept for next time.
+    /// The latest attempt failed.
     Failed {
         kind: JobKind,
         message: String,
-        kept: Option<TransferProgress>,
     },
-    Paused(TransferProgress),
     Downloaded,
     Exported,
 }
@@ -159,7 +157,7 @@ impl BookSection {
 impl BookStatus {
     pub fn section(&self) -> BookSection {
         match self {
-            Self::Queued(_) | Self::Running { .. } | Self::Paused(_) => BookSection::InProgress,
+            Self::Queued(_) | Self::Running { .. } => BookSection::InProgress,
             Self::Failed { .. } => BookSection::NeedsAttention,
             Self::Downloaded => BookSection::Downloaded,
             Self::Exported => BookSection::Exported,
@@ -171,9 +169,11 @@ impl BookStatus {
     pub fn transferred(&self) -> Option<TransferProgress> {
         match self {
             Self::Running { transferred, .. } => *transferred,
-            Self::Failed { kept, .. } => *kept,
-            Self::Paused(kept) => Some(*kept),
-            Self::None | Self::Queued(_) | Self::Downloaded | Self::Exported => None,
+            Self::None
+            | Self::Queued(_)
+            | Self::Failed { .. }
+            | Self::Downloaded
+            | Self::Exported => None,
         }
     }
 
@@ -191,7 +191,6 @@ impl BookStatus {
                 format!("{verb}, {}%", (progress * 100.0).round())
             }
             Self::Failed { message, .. } => format!("Failed: {message}"),
-            Self::Paused(_) => "Download paused".into(),
             Self::Downloaded => "Downloaded".into(),
             Self::Exported => "Exported".into(),
         })
@@ -202,7 +201,6 @@ impl BookStatus {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BookAction {
     Download,
-    ResumeDownload,
     Cancel(JobKind),
     Export,
     ShowDownload,
@@ -225,7 +223,6 @@ impl BookAction {
         }
         match self {
             Self::Download => "Download",
-            Self::ResumeDownload => "Resume Download",
             Self::Cancel(JobKind::Download) => "Cancel Download",
             Self::Cancel(JobKind::Export) => "Cancel Export",
             Self::Export => "Export to M4B",
@@ -294,9 +291,6 @@ pub fn menu_items(status: &BookStatus, is_in_library: bool) -> Vec<BookMenuItem>
             }
             items.push(item(DeleteDownload));
             items
-        }
-        BookStatus::Paused(_) | BookStatus::Failed { kept: Some(_), .. } => {
-            vec![item(ResumeDownload), item(Export), item(DeleteDownload)]
         }
         BookStatus::None | BookStatus::Failed { .. } if is_in_library => {
             vec![item(Download), item(Export)]

@@ -1,5 +1,12 @@
 [workspace]
-members = [".", "crates/*"]
+members = [
+    ".",
+    "crates/loudible-adapters",
+    "crates/loudible-core",
+    "crates/loudible-ffmpeg",
+    "crates/loudible-presentation",
+    "crates/loudible-test-support",
+]
 resolver = "3"
 
 [workspace.package]

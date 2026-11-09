@@ -8,7 +8,6 @@ use loudible_core::{
 use sha2::{Digest, Sha256};
 use url::Url;
 
-use crate::content_metadata::ContentReference;
 use crate::json::{self, Json};
 use crate::library_response::check_status;
 use crate::{HttpRequest, HttpResponse};
@@ -39,16 +38,11 @@ pub fn license_request(asin: &str, marketplace: Marketplace) -> HttpRequest {
     request
 }
 
-pub struct ParsedLicense {
-    pub license: ContentLicense,
-    pub reference: Option<ContentReference>,
-}
-
 pub fn parse_license(
     response: &HttpResponse,
     asin: &str,
     session: &AudibleSession,
-) -> Result<ParsedLicense, ExporterError> {
+) -> Result<ContentLicense, ExporterError> {
     let value = json::parse(&response.body);
     let json = Json::new(&value);
     let license = json.get("content_license");
@@ -106,17 +100,14 @@ pub fn parse_license(
         })?;
     let chapter_info = metadata.get("chapter_info");
     let reference = metadata.get("content_reference");
-    Ok(ParsedLicense {
-        license: ContentLicense {
-            asin: asin.to_string(),
-            decryption,
-            download_url,
-            chapters: flatten(&chapter_info.get("chapters").array().unwrap_or_default()),
-            runtime_milliseconds: chapter_info.get("runtime_length_ms").int(),
-            codec: reference.get("codec").string(),
-            content_format: reference.get("content_format").string(),
-        },
-        reference: ContentReference::new(reference),
+    Ok(ContentLicense {
+        asin: asin.to_string(),
+        decryption,
+        download_url,
+        chapters: flatten(&chapter_info.get("chapters").array().unwrap_or_default()),
+        runtime_milliseconds: chapter_info.get("runtime_length_ms").int(),
+        codec: reference.get("codec").string(),
+        content_format: reference.get("content_format").string(),
     })
 }
 

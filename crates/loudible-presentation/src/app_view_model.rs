@@ -5,20 +5,17 @@ use std::rc::Rc;
 
 use loudible_core::{
     Audiobook, BookAction, BookMenuContext, BookMenuItem, BookStatus, DeviceIdentity, ExportJob,
-    LocalDownloads, TransferProgress, book_menu_items,
+    LocalDownloads, book_menu_items,
 };
 use url::Url;
 
-use crate::{
-    Changes, ErrorToastQueue, ExportViewModel, LibraryViewModel, LoadState, SessionViewModel,
-};
+use crate::{Changes, ErrorToastQueue, ExportViewModel, LibraryViewModel, SessionViewModel};
 
 /// What the folders on disk held at the last rescan.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct DiskState {
     pub downloaded_files: HashMap<String, PathBuf>,
     pub exported_files: HashMap<String, PathBuf>,
-    pub partial_downloads: HashMap<String, TransferProgress>,
     pub manifest_asins: HashSet<String>,
 }
 
@@ -39,19 +36,15 @@ impl MenuFacts<'_> {
                 is_in_library,
                 has_manifest: self.disk.manifest_asins.contains(asin),
                 is_signed_in: self.is_signed_in,
-                has_partial_download: self.disk.partial_downloads.contains_key(asin),
             },
         )
     }
 }
 
-/// Download includes Resume Download.
 pub(crate) fn offers(items: &[BookMenuItem], action: BookAction) -> bool {
-    items.iter().any(|item| {
-        item.is_enabled
-            && (item.action == action
-                || (action == BookAction::Download && item.action == BookAction::ResumeDownload))
-    })
+    items
+        .iter()
+        .any(|item| item.is_enabled && item.action == action)
 }
 
 struct Inner {
@@ -68,8 +61,7 @@ struct Inner {
 
 /// Connects the session, library, and export models: signing in loads the library,
 /// signing out clears it, and a new sign-in resumes jobs paused for authentication. Also keeps
-/// track of which books are downloaded, exported or partly downloaded, from the files on disk,
-/// and continues the unfinished downloads of the signed-in account.
+/// track of downloaded and exported books from the files on disk.
 #[derive(Clone)]
 pub struct AppViewModel(Rc<Inner>);
 
@@ -126,7 +118,7 @@ impl AppViewModel {
         if self.0.started.replace(true) {
             return;
         }
-        // Unfinished downloads are kept; other leftovers of an interrupted run are not.
+        // Old staging files and recovery records cannot be resumed.
         let downloads = self.0.downloads.clone();
         on_blocking_thread(move || downloads.sweep_partials()).await;
         let weak = Rc::downgrade(&self.0);
@@ -176,67 +168,10 @@ impl AppViewModel {
         }
     }
 
-    /// Reloads the library, then the downloaded books shown with it, then continues the
-    /// unfinished downloads.
+    /// Reloads the library and downloaded books shown with it.
     pub async fn refresh_library(&self) {
         self.0.library.refresh().await;
         self.rescan().await;
-        self.reconcile_partial_downloads().await;
-    }
-
-    /// Continues the signed-in account's unfinished downloads, except those that failed in this
-    /// session (they wait for Resume Download), and deletes the ones that can't be continued:
-    /// another account's and books no longer in the library. Does nothing
-    /// unless the library loaded completely, so a failed refresh never deletes anything.
-    pub async fn reconcile_partial_downloads(&self) {
-        let (library, export) = (&self.0.library, &self.0.export);
-        let Some(customer_id) = self.0.session.session().map(|session| session.customer_id) else {
-            return;
-        };
-        if library.load_state() != LoadState::Loaded || library.is_checking_marketplaces() {
-            return;
-        }
-        let downloads = self.0.downloads.clone();
-        let Some(records) = on_blocking_thread(move || downloads.partial_downloads()).await else {
-            return;
-        };
-        let busy = export.busy_asins();
-        let books = library.books();
-        let mut discard = Vec::new();
-        let mut resume = Vec::new();
-        for record in records {
-            let asin = &record.book.asin;
-            if busy.contains(asin) {
-                continue;
-            }
-            if record.customer_id != customer_id {
-                discard.push(asin.clone());
-            } else if !library.is_in_library(asin) {
-                // A store that couldn't be checked may still hold it.
-                if library.unchecked_marketplaces().is_empty() {
-                    discard.push(asin.clone());
-                }
-            } else if export.failure(asin).is_none() {
-                let book = books.iter().find(|book| book.asin == *asin);
-                resume.push(book.cloned().unwrap_or_else(|| record.book.clone()));
-            }
-        }
-        let changed = !discard.is_empty() || !resume.is_empty();
-        if !discard.is_empty() {
-            let downloads = self.0.downloads.clone();
-            on_blocking_thread(move || {
-                discard
-                    .iter()
-                    .for_each(|asin| downloads.remove_partial_download(asin));
-            })
-            .await;
-        }
-        if !resume.is_empty() {
-            export.download(&resume);
-        }
-        if changed {
-            self.rescan().await;
-        }
     }
 
     // MARK: Files on disk
@@ -269,17 +204,11 @@ impl AppViewModel {
                     book
                 })
                 .collect();
-            let partial_downloads = downloads
-                .partial_downloads()
-                .iter()
-                .map(|record| (record.book.asin.clone(), downloads.partial_progress(record)))
-                .collect();
             let manifest_asins = manifests.into_iter().map(|m| m.book.asin).collect();
             (
                 DiskState {
                     downloaded_files,
                     exported_files,
-                    partial_downloads,
                     manifest_asins,
                 },
                 local_books,
@@ -306,10 +235,6 @@ impl AppViewModel {
         self.0.disk.borrow().exported_files.clone()
     }
 
-    pub fn partial_downloads(&self) -> HashMap<String, TransferProgress> {
-        self.0.disk.borrow().partial_downloads.clone()
-    }
-
     // MARK: Per-book state
 
     pub fn status(&self, book: &Audiobook) -> BookStatus {
@@ -320,7 +245,6 @@ impl AppViewModel {
             asin,
             &self.0.export.jobs(),
             failure.as_ref().map(|(kind, text)| (*kind, text.as_str())),
-            disk.partial_downloads.get(asin).copied(),
             disk.downloaded_files.contains_key(asin),
             disk.exported_files.contains_key(asin),
         )
@@ -342,7 +266,7 @@ impl AppViewModel {
     pub async fn perform(&self, action: BookAction, book: &Audiobook) {
         let export = &self.0.export;
         match action {
-            BookAction::Download | BookAction::ResumeDownload => {
+            BookAction::Download => {
                 export.download(std::slice::from_ref(book));
             }
             BookAction::Cancel { job_id, .. } => export.cancel(job_id),
@@ -355,7 +279,7 @@ impl AppViewModel {
     // MARK: Selection
 
     /// The selected books whose menu offers `action` enabled, i.e. the ones the toolbar's
-    /// Download or Export button acts on. Download includes Resume Download.
+    /// Download or Export button acts on.
     pub fn selected_books_offering(&self, action: BookAction) -> Vec<Audiobook> {
         self.0
             .library
@@ -396,9 +320,7 @@ impl AppViewModel {
         self.0.export.active_job_count() > 0
     }
 
-    /// Stops every job, then signs out. Downloads keep recovery state and resume if possible
-    /// after signing in to the same account again; exports and jobs that hadn't started are
-    /// dropped. Finished downloads and exports are kept.
+    /// Stops every job, then signs out. Incomplete downloads are discarded; completed files stay.
     pub async fn sign_out(&self) {
         self.0.export.suspend().await;
         self.0.session.sign_out();

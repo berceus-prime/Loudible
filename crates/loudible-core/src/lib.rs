@@ -16,7 +16,6 @@ pub mod hex_encoding;
 pub mod library;
 pub mod local_downloads;
 pub mod marketplace;
-pub mod partial_download;
 pub mod pending_login;
 pub mod text;
 
@@ -33,7 +32,6 @@ pub use exporter_error::*;
 pub use library::*;
 pub use local_downloads::LocalDownloads;
 pub use marketplace::Marketplace;
-pub use partial_download::*;
 pub use pending_login::*;
 
 /// A moment in time, in UTC.

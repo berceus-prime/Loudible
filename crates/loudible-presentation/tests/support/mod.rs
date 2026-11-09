@@ -84,7 +84,7 @@ impl Fixture {
         )
     }
 
-    pub fn dependencies(&self, slots: usize) -> AppDependencies {
+    pub fn dependencies(&self, _slots: usize) -> AppDependencies {
         let auth = self.auth();
         AppDependencies {
             library: LibraryService::new(
@@ -98,7 +98,6 @@ impl Fixture {
                 self.downloader.clone(),
                 self.converter.clone(),
                 self.downloads.clone(),
-                slots,
             ),
             auth,
             downloads: self.downloads.clone(),
@@ -118,24 +117,6 @@ impl Fixture {
             reference_date(),
         );
         self.downloads.write_manifest(&manifest, None).unwrap();
-    }
-
-    /// Recovery from an earlier run.
-    pub fn keep_partial(&self, asin: &str, customer_id: &str, token: Option<&[u8]>) {
-        self.downloads.ensure_folder().unwrap();
-        self.downloads
-            .write_partial_download(&PartialDownload::new(
-                book(asin),
-                customer_id,
-                "aaxc",
-                DownloadRecovery {
-                    resume_data: token.map(<[u8]>::to_vec),
-                    progress: Some(TransferProgress::new(3, 9)),
-                },
-                license(asin).decryption,
-                reference_date(),
-            ))
-            .unwrap();
     }
 
     pub async fn make_app(&self) -> (AppViewModel, ExportQueue) {

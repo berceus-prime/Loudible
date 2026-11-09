@@ -12,7 +12,7 @@ it in `src/composition.rs`.
 | Item | Purpose |
 | --- | --- |
 | `FfmpegConverter` | The `AudioConverter`. `FfmpegConverter::new()` starts its worker thread. |
-| `metadata_tags(&BookMetadata)` | The tags written over the source's own. Only with FFmpeg. |
+| `metadata_tags(&BookMetadata)` | The tags written over the source's own.  |
 | `license()` | The license FFmpeg was configured with, e.g. "LGPL version 2.1 or later". |
 | `libavformat_version()` | libavformat's version, e.g. "61.7.103". |
 | `missing_components()` | Required FFmpeg components the loaded build lacks; empty when complete. |
@@ -49,23 +49,9 @@ the version pinned in `Scripts/ffmpeg-version.sh` (currently 7.1.5). It download
 checks its SHA-256, and builds shared libraries with only the components Loudible needs. It runs
 on macOS (arm64), Linux, and Windows (MSVC from MSYS2).
 
-When `include/libavformat/avformat.h` exists there, `build.rs`:
-
-* compiles the bridge with `cc`, all warnings as errors;
-* links `avformat`, `avcodec` and `avutil` dynamically from `lib/`;
-* sets the `has_ffmpeg` cfg.
-
-When it doesn't, the build prints a warning and skips all of that. Without `has_ffmpeg` the crate
-exports `src/unavailable.rs` instead:
-
-| Item | Without FFmpeg |
-| --- | --- |
-| `FfmpegConverter::convert` | Fails with `ExporterError::Conversion("This build does not include FFmpeg.")`. |
-| `license()`, `libavformat_version()` | `"none"` |
-| `missing_components()` | `["FFmpeg"]` |
-| `metadata_tags` | Not exported. |
-
-So the rest of the workspace builds and runs everywhere; only export is unavailable.
+`build.rs` requires the FFmpeg headers and three link libraries. If they are absent, it fails
+with instructions to run `Scripts/build-ffmpeg.sh` or set `LOUDIBLE_FFMPEG_DIR`. Otherwise it
+compiles the bridge with warnings as errors and links `avformat`, `avcodec` and `avutil` dynamically.
 
 The build reruns when `LOUDIBLE_FFMPEG_DIR`, `bridge/` or FFmpeg's `lib/` changes.
 
@@ -116,7 +102,7 @@ Scripts/build-ffmpeg.sh          # once, from the workspace root
 cargo test -p loudible-ffmpeg
 ```
 
-The tests need FFmpeg. Without it they compile to nothing and pass trivially.
+The tests require FFmpeg; the build fails if it is missing.
 
 | Test | Covers |
 | --- | --- |

@@ -278,13 +278,10 @@ pub fn write(path: &Path, contents: &str) -> Result<(), ExporterError> {
     std::fs::write(path, contents).map_err(|error| ExporterError::FileSystem(error.to_string()))
 }
 
-pub const RESUME_TOKEN: &[u8] = b"synthetic-resume-token";
-
-/// Records resume tokens and reports synthetic recovery when an interrupted handler fails.
+/// Downloads into a supplied path and reports synthetic progress.
 pub struct MockDownloader {
     handler: Handler<(Url, PathBuf, CancellationToken), ()>,
     pub downloads: Locked<Vec<(Url, PathBuf)>>,
-    pub resumes: Locked<Vec<Option<Vec<u8>>>>,
 }
 
 impl Default for MockDownloader {
@@ -294,7 +291,6 @@ impl Default for MockDownloader {
                 |(_, destination, _): (Url, PathBuf, _)| async move { write(&destination, "encrypted") },
             )),
             downloads: Locked::default(),
-            resumes: Locked::default(),
         }
     }
 }
@@ -316,30 +312,19 @@ impl FileDownloader for MockDownloader {
         &self,
         url: &Url,
         destination: &Path,
-        resume_data: Option<Vec<u8>>,
-        recovery: RecoverySink,
         progress: DownloadProgressSink,
         cancel: &CancellationToken,
     ) -> Result<(), ExporterError> {
         self.downloads
             .with(|all| all.push((url.clone(), destination.to_path_buf())));
-        self.resumes.with(|all| all.push(resume_data));
-        recovery(DownloadRecovery::default());
         let report = |bytes| {
-            progress(DownloadProgress {
-                attempt: 0,
-                transferred: TransferProgress::new(bytes, 100),
-            });
+            progress(TransferProgress::new(bytes, 100));
         };
         report(50);
         let handler = self.handler.current();
         let result = handler((url.clone(), destination.to_path_buf(), cancel.clone())).await;
         if result.is_err() {
             let _ = std::fs::remove_file(destination);
-            recovery(DownloadRecovery {
-                resume_data: Some(RESUME_TOKEN.to_vec()),
-                progress: Some(TransferProgress::new(50, 100)),
-            });
             return result;
         }
         report(100);
@@ -564,11 +549,18 @@ pub fn pending_login(marketplace: Marketplace, id: Uuid, created_at: Date) -> Pe
     }
 }
 
+/// The sign-in redirect carrying `code`, a raw authorization code that is encoded here.
 pub fn callback_url(marketplace: Marketplace, code: &str) -> String {
-    format!(
-        "https://{}/ap/maplanding?openid.assoc_handle=amzn_audible_ios_us&openid.oa2.authorization_code={code}",
-        marketplace.amazon_host()
-    )
+    let mut url = Url::parse(&format!(
+        "https://{}{}",
+        marketplace.amazon_host(),
+        LoginCallback::PATH
+    ))
+    .expect("a valid callback URL");
+    url.query_pairs_mut()
+        .append_pair("openid.assoc_handle", "amzn_audible_ios_us")
+        .append_pair(LoginCallback::AUTHORIZATION_CODE_PARAMETER, code);
+    url.into()
 }
 
 pub fn us_callback() -> String {

@@ -136,13 +136,12 @@ pub fn partial_name(base: &str, token: &str) -> String {
     )
 }
 
-/// Hidden name for a download kept to be continued: `.<ASIN>.download.partial`. It depends on
-/// the ASIN only, so a later attempt finds it even if the title changed meanwhile.
-pub fn resumable_partial_name(asin: &str) -> String {
+/// Hidden staging name for a download: `.<ASIN>.download.partial`.
+pub fn download_staging_name(asin: &str) -> String {
     format!(".{}.download.partial", sanitized_asin(asin))
 }
 
-/// Whether `name` is one of the names `partial_name` or `resumable_partial_name` produces.
+/// Whether `name` is one of the conversion or download staging names.
 pub fn is_partial(name: &str) -> bool {
     name.starts_with('.') && name.ends_with(".partial")
 }

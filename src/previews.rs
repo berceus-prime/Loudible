@@ -6,7 +6,7 @@ use skia_safe::{Rect, Size};
 use crate::model::{
     Account, Audiobook, BookStatus, BookTileState, JobKind, Marketplace, MockApp, MockOptions,
     TransferProgress,
-    preview_data::{self as data, KEPT, tile_state},
+    preview_data::{self as data, tile_state},
 };
 use crate::shell::app_view::AppView;
 use crate::stage::Screen;
@@ -157,26 +157,7 @@ fn book_tiles() -> Vec<Preview> {
             status(BookStatus::Failed {
                 kind: JobKind::Download,
                 message: "HTTP 403: Forbidden".into(),
-                kept: None,
             }),
-            true,
-        ),
-        tile_preview(
-            "tileFailedPartial",
-            "Tile – failed, part downloaded",
-            1,
-            status(BookStatus::Failed {
-                kind: JobKind::Download,
-                message: "The network connection was lost.".into(),
-                kept: Some(KEPT),
-            }),
-            true,
-        ),
-        tile_preview(
-            "tilePaused",
-            "Tile – download paused",
-            1,
-            status(BookStatus::Paused(KEPT)),
             true,
         ),
         tile_preview(

@@ -10,15 +10,14 @@ pub struct LicenseProvider {
 }
 
 impl LicenseProvider {
-    /// The license and the account it belongs to.
-    pub async fn fetch(&self, book: &Audiobook) -> Result<(ContentLicense, String), ExporterError> {
+    pub async fn fetch(&self, book: &Audiobook) -> Result<ContentLicense, ExporterError> {
         self.auth
             .with_valid_session(|session| async move {
                 let license = self
                     .api
                     .license(&book.asin, book.marketplace, &session)
                     .await?;
-                Ok((license, session.customer_id))
+                Ok(license)
             })
             .await
     }

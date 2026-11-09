@@ -7,11 +7,11 @@ use super::Snapshot;
 use super::execution_context::ExportProgressEvent;
 use crate::{JobState, Phase, TransferProgress};
 
-/// Queue-owned application state; workflows and the generic scheduler never mutate it.
+/// Queue-owned application state; workflows never mutate it directly.
 pub struct ExportQueueState {
     pub snapshot: Snapshot,
     published: watch::Sender<Snapshot>,
-    transfers: HashMap<Uuid, (Uuid, i64)>,
+    transfers: HashMap<Uuid, Uuid>,
 }
 
 impl Default for ExportQueueState {
@@ -76,30 +76,26 @@ impl ExportQueueState {
             }
             ExportProgressEvent::BeginDownload(invocation) => {
                 if is_downloading {
-                    self.transfers.insert(id, (invocation, -1));
+                    self.transfers.insert(id, invocation);
                 }
             }
             ExportProgressEvent::EndDownload(invocation) => {
-                if self.transfers.get(&id).is_some_and(|t| t.0 == invocation) {
+                if self.transfers.get(&id) == Some(&invocation) {
                     self.transfers.remove(&id);
                 }
             }
             ExportProgressEvent::Download(invocation, progress) => {
-                let Some(&(current, attempt)) = self.transfers.get(&id) else {
+                let Some(&current) = self.transfers.get(&id) else {
                     return;
                 };
-                if current != invocation || progress.attempt < attempt || !is_downloading {
+                if current != invocation || !is_downloading {
                     return;
-                }
-                if progress.attempt > attempt {
-                    self.transfers.insert(id, (invocation, progress.attempt));
-                    self.snapshot.jobs[index].restart_download();
                 }
                 self.report_progress(
                     index,
                     Phase::Downloading,
-                    progress.transferred.fraction(),
-                    Some(progress.transferred),
+                    progress.fraction(),
+                    Some(progress),
                 );
             }
             ExportProgressEvent::Conversion(progress) => {

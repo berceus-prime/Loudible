@@ -2,7 +2,6 @@
 
 pub mod audible_http_api;
 pub mod audible_login_factory;
-pub mod content_metadata;
 pub mod credentials;
 pub mod http_transport;
 pub mod json;
