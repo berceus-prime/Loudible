@@ -103,11 +103,11 @@ Tags written by `metadata_tags`:
 | `title`, `album` | The book's title |
 | `genre` | `Audiobook` |
 | `comment` | `ASIN: <asin>` |
-| `artist`, `album_artist` | Authors, comma-separated; only if any |
-| `composer` | Narrators, comma-separated; only if any |
-| `description` | Subtitle, if present |
-| `copyright` | Publisher, if present |
-| `date` | Release date, if present |
+| `artist`, `album_artist` | Authors, comma-separated; cleared if absent |
+| `composer` | Narrators, comma-separated; cleared if absent |
+| `description` | Subtitle; cleared if absent |
+| `copyright` | Publisher; cleared if absent |
+| `date` | Release date; cleared if absent |
 
 ## Tests
 

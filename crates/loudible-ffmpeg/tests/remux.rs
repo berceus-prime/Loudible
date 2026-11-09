@@ -56,6 +56,24 @@ fn cover_atoms() -> Vec<u8> {
     atom(b"udta", &[&full(b"meta", 0, &[&handler, &ilst])])
 }
 
+fn inherited_tag_atoms() -> Vec<u8> {
+    let tags = [
+        (b"\xa9ART", "Old Artist"),
+        (b"aART", "Old Album Artist"),
+        (b"\xa9wrt", "Old Composer"),
+        (b"desc", "Old Description"),
+        (b"cprt", "Old Copyright"),
+        (b"\xa9day", "1999-01-01"),
+    ];
+    let entries: Vec<Vec<u8>> = tags
+        .iter()
+        .map(|(key, value)| atom(*key, &[&atom(b"data", &[&be32(&[1, 0]), value.as_bytes()])]))
+        .collect();
+    let ilst = atom(b"ilst", &[&entries.concat()]);
+    let handler = full(b"hdlr", 0, &[&[0; 4], b"mdirappl", &[0; 9]]);
+    atom(b"udta", &[&full(b"meta", 0, &[&handler, &ilst])])
+}
+
 fn m4a_with_extra_moov_atoms(extra: &[u8]) -> Vec<u8> {
     let ftyp = atom(b"ftyp", &[b"M4A \0\0\0\0isomM4A "]);
     let samples = FRAME.repeat(FRAMES as usize);
@@ -256,6 +274,34 @@ async fn remuxes_audio_with_chapters_and_metadata() {
 }
 
 #[tokio::test]
+async fn absent_book_fields_clear_inherited_tags_in_the_m4b() {
+    let f = fixture();
+    std::fs::write(
+        f.directory.join("tagged.aaxc"),
+        m4a_with_extra_moov_atoms(&inherited_tag_atoms()),
+    )
+    .unwrap();
+    let mut request = f.request("tagged.aaxc", "cleared.m4b");
+    request.metadata = BookMetadata::from(&Audiobook::new("B1", Marketplace::US, "New Title"));
+    f.convert(request).await.unwrap();
+    let output = read(f.directory.join("cleared.m4b"));
+    assert!(contains(&output, b"New Title"));
+    for inherited in [
+        "Old Artist",
+        "Old Album Artist",
+        "Old Composer",
+        "Old Description",
+        "Old Copyright",
+        "1999-01-01",
+    ] {
+        assert!(
+            !contains(&output, inherited.as_bytes()),
+            "{inherited} survived the remux"
+        );
+    }
+}
+
+#[tokio::test]
 async fn the_output_is_readable_by_ffmpeg_and_keeps_its_chapters() {
     let f = fixture();
     f.convert(f.request("in.aaxc", "first.m4b")).await.unwrap();
@@ -437,7 +483,7 @@ async fn conversions_run_one_at_a_time_on_one_thread() {
 }
 
 #[test]
-fn metadata_tags_leave_out_what_the_book_lacks() {
+fn metadata_tags_clear_what_the_book_lacks() {
     let tag = |key: &str, value: &str| (key.to_string(), value.to_string());
     let bare = BookMetadata::from(&Audiobook::new("B1", Marketplace::US, "T"));
     assert_eq!(
@@ -447,6 +493,12 @@ fn metadata_tags_leave_out_what_the_book_lacks() {
             tag("album", "T"),
             tag("genre", "Audiobook"),
             tag("comment", "ASIN: B1"),
+            tag("artist", ""),
+            tag("album_artist", ""),
+            tag("composer", ""),
+            tag("description", ""),
+            tag("copyright", ""),
+            tag("date", ""),
         ]
     );
     assert_eq!(

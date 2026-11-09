@@ -102,6 +102,20 @@ pub struct ReqwestTransport {
 impl ReqwestTransport {
     pub fn new() -> Result<Self, ExporterError> {
         let client = client_builder()
+            // Reqwest does not strip custom signing headers on cross-origin redirects.
+            .redirect(reqwest::redirect::Policy::custom(|attempt| {
+                if attempt.previous().len() >= 10 {
+                    attempt.error("too many redirects")
+                } else if attempt
+                    .previous()
+                    .last()
+                    .is_some_and(|previous| previous.origin() != attempt.url().origin())
+                {
+                    attempt.stop()
+                } else {
+                    attempt.follow()
+                }
+            }))
             .user_agent(concat!("Loudible/", env!("CARGO_PKG_VERSION")))
             .build()
             .map_err(|error| ExporterError::Unexpected(describe(error)))?;

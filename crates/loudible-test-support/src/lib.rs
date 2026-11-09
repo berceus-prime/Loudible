@@ -449,16 +449,47 @@ impl TemporaryDirectory {
 
 /// Everything in `directory`, hidden files included, sorted; empty if it doesn't exist.
 pub fn contents_of(directory: &Path) -> Vec<String> {
-    let mut names: Vec<String> = std::fs::read_dir(directory)
-        .map(|entries| {
-            entries
-                .flatten()
-                .map(|entry| entry.file_name().to_string_lossy().into_owned())
-                .collect()
+    let entries = match std::fs::read_dir(directory) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Vec::new(),
+        Err(error) => panic!("cannot read directory {}: {error}", directory.display()),
+    };
+    let mut names: Vec<String> = entries
+        .map(|entry| {
+            entry
+                .unwrap_or_else(|error| {
+                    panic!("cannot read entry in {}: {error}", directory.display())
+                })
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
         })
-        .unwrap_or_default();
+        .collect();
     names.sort();
     names
+}
+
+#[cfg(test)]
+mod directory_tests {
+    use super::*;
+
+    #[test]
+    fn missing_directory_is_empty_and_existing_entries_are_sorted() {
+        let directory = TemporaryDirectory::default();
+        assert!(contents_of(&directory.join("missing")).is_empty());
+        std::fs::write(directory.join("z"), "").unwrap();
+        std::fs::write(directory.join(".hidden"), "").unwrap();
+        assert_eq!(contents_of(directory.path()), [".hidden", "z"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot read directory")]
+    fn a_file_is_not_treated_as_an_empty_directory() {
+        let directory = TemporaryDirectory::default();
+        let file = directory.join("file");
+        std::fs::write(&file, "").unwrap();
+        contents_of(&file);
+    }
 }
 
 // MARK: Fixtures

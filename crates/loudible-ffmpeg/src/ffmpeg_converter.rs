@@ -193,23 +193,12 @@ pub fn metadata_tags(book: &BookMetadata) -> Vec<(String, String)> {
         ("genre", "Audiobook".to_string()),
         ("comment", format!("ASIN: {}", book.asin)),
     ];
-    if !authors.is_empty() {
-        tags.push(("artist", authors.clone()));
-        tags.push(("album_artist", authors));
-    }
-    if !book.narrators.is_empty() {
-        tags.push(("composer", book.narrators.join(", ")));
-    }
-    let optional = [
-        ("description", &book.subtitle),
-        ("copyright", &book.publisher),
-        ("date", &book.release_date),
-    ];
-    for (key, value) in optional {
-        if let Some(value) = value.as_ref().filter(|value| !value.is_empty()) {
-            tags.push((key, value.clone()));
-        }
-    }
+    tags.push(("artist", authors.clone()));
+    tags.push(("album_artist", authors));
+    tags.push(("composer", book.narrators.join(", ")));
+    tags.push(("description", book.subtitle.clone().unwrap_or_default()));
+    tags.push(("copyright", book.publisher.clone().unwrap_or_default()));
+    tags.push(("date", book.release_date.clone().unwrap_or_default()));
     tags.into_iter()
         .map(|(key, value)| (key.to_string(), value))
         .collect()
