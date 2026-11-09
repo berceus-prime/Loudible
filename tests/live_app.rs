@@ -238,7 +238,7 @@ fn search_is_folded_by_the_engine() {
     let mut flow = flow(true);
     flow.loaded();
     flow.click(|a| matches!(a, Action::FocusField(Field::Search, _)));
-    flow.stage.screen.key(Key::Text("b2".into()));
+    flow.stage.key(Key::Text("b2".into()));
     flow.wait_for(|app| app.visible_books().len() == 1);
     assert_eq!(&*flow.stage.screen.app.visible_books()[0].asin, "B2");
 }
@@ -365,7 +365,7 @@ fn closing_with_work_that_would_be_lost_asks_first() {
     assert!(flow.stage.screen.app.has_active_jobs());
 
     assert!(!flow.stage.screen.close_requested());
-    flow.stage.screen.key(Key::Escape);
+    flow.stage.key(Key::Escape);
     assert!(flow.stage.screen.app.has_active_jobs());
 
     assert!(!flow.stage.screen.close_requested());

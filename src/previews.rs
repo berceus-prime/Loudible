@@ -531,10 +531,10 @@ struct LoginState {
 
 fn login(id: &'static str, title: &'static str, state: LoginState) -> Preview {
     preview("LoginSheet", id, title, (520.0, 760.0), move |ui, size| {
-        let mut pasted = TextField::default();
+        let mut pasted = TextField::new(crate::text::BODY);
         if let Some(url) = state.pasted {
-            pasted.set(url.to_string());
-            pasted.move_to(0);
+            pasted.set(url, ui.text);
+            pasted.move_to_start(ui.text);
         }
         login_sheet::login_sheet(
             ui,

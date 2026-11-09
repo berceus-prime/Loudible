@@ -99,7 +99,7 @@ fn a_sheet_blocks_the_window_beneath_it() {
     let refresh_area = Point::new(1080.0, 26.0);
     flow.0.click(refresh_area);
     assert!(flow.app().pending_login().is_some());
-    assert_eq!(flow.0.screen.key(Key::Escape), None);
+    assert_eq!(flow.0.key(Key::Escape), None);
     assert!(flow.app().pending_login().is_none());
 }
 
@@ -133,11 +133,37 @@ fn the_dots_menu_starts_a_download_without_selecting() {
 fn typing_in_search_filters_the_grid() {
     let mut flow = signed_in();
     flow.click(|a| matches!(a, Action::FocusField(Field::Search, _)));
-    flow.0.screen.key(Key::Text("henrik".into()));
+    flow.0.key(Key::Text("henrik".into()));
     assert_eq!(flow.app().visible_books().len(), 1);
-    flow.0.screen.key(Key::SelectAll);
-    flow.0.screen.key(Key::Backspace);
+    flow.0.key(Key::SelectAll);
+    flow.0.key(Key::Backspace { word: false });
     assert_eq!(flow.app().visible_books().len(), 10);
+}
+
+#[test]
+fn dragging_across_search_text_selects_it_for_copying() {
+    let mut flow = signed_in();
+    flow.click(|a| matches!(a, Action::FocusField(Field::Search, _)));
+    flow.0.key(Key::Text("henrik ibsen".into()));
+    flow.frame();
+    let hit = flow
+        .0
+        .hits()
+        .iter()
+        .find(|hit| matches!(hit.action, Action::FocusField(Field::Search, _)))
+        .expect("search is on screen");
+    let Action::FocusField(_, text_x) = hit.action else {
+        unreachable!()
+    };
+    let y = hit.rect.center_y();
+    // Waits out the double-click interval so this press places a caret.
+    flow.wait(600);
+    flow.0.pointer_moved(Point::new(text_x + 1.0, y));
+    flow.0.pointer_down(false);
+    flow.0.pointer_moved(Point::new(text_x + 300.0, y));
+    flow.0.pointer_up();
+    let effect = flow.0.key(Key::Copy);
+    assert_eq!(effect, Some(Effect::Copy("henrik ibsen".into())));
 }
 
 #[test]

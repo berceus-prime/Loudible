@@ -6,19 +6,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-use skia_safe::{AlphaType, ColorType, ImageInfo, Point, Size, surfaces};
+use skia_safe::{AlphaType, ColorType, ImageInfo, Point, Rect, Size, surfaces};
 use softbuffer::{Context, Surface};
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalPosition, LogicalSize},
-    event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent},
+    event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
     keyboard::{Key as WinitKey, ModifiersState, NamedKey},
     window::{CursorIcon, Theme as WinitTheme, Window, WindowId},
 };
 
 use crate::shell::webview::{self, LoginWebView};
-use crate::stage::{Effect, Key, Screen, Stage};
+use crate::stage::{Effect, Key, Motion, Screen, Stage};
 use crate::theme::Theme;
 
 /// Points scrolled per wheel notch, for mice that report lines.
@@ -33,6 +33,8 @@ struct Host<D: winit::raw_window_handle::HasDisplayHandle, S> {
     state: Option<WindowState<D>>,
     context: Option<Context<D>>,
     modifiers: ModifiersState,
+    /// Where the input method was last told text is typed; `None` while it is off.
+    ime_area: Option<Rect>,
     last_frame: Instant,
     clipboard: Option<arboard::Clipboard>,
     proxy: EventLoopProxy<HostEvent>,
@@ -85,6 +87,7 @@ pub fn run_with<S: Screen + 'static>(make: impl FnOnce(Wake) -> S, title: &str, 
         state: None,
         context: Some(context),
         modifiers: ModifiersState::empty(),
+        ime_area: None,
         last_frame: Instant::now(),
         clipboard: arboard::Clipboard::new().ok(),
         proxy: event_loop.create_proxy(),
@@ -94,6 +97,32 @@ pub fn run_with<S: Screen + 'static>(make: impl FnOnce(Wake) -> S, title: &str, 
     };
     event_loop.run_app(&mut host).expect("run event loop");
 }
+
+/// `cargo run` starts a bare executable, which the Dock shows with a generic icon. A bundle has
+/// its compiled `AppIcon.icon` instead, so this leaves it alone.
+#[cfg(target_os = "macos")]
+fn show_icon_outside_bundle() {
+    use objc2::{AllocAnyThread as _, MainThreadMarker};
+    use objc2_app_kit::{NSApplication, NSImage};
+    use objc2_foundation::{NSBundle, NSData};
+
+    // Exported from the built bundle's AppIcon.icns; see Scripts/build-app.sh.
+    const ICON: &[u8] = include_bytes!("../../Resources/AppIcon.png");
+    let Some(main_thread) = MainThreadMarker::new() else {
+        return;
+    };
+    if NSBundle::mainBundle().bundleIdentifier().is_some() {
+        return;
+    }
+    let Some(image) = NSImage::initWithData(NSImage::alloc(), &NSData::with_bytes(ICON)) else {
+        return;
+    };
+    // The image is a valid NSImage, set on the main thread.
+    unsafe { NSApplication::sharedApplication(main_thread).setApplicationIconImage(Some(&image)) };
+}
+
+#[cfg(not(target_os = "macos"))]
+fn show_icon_outside_bundle() {}
 
 fn attributes(size: (f64, f64), title: &str) -> winit::window::WindowAttributes {
     let attributes = Window::default_attributes()
@@ -184,11 +213,16 @@ impl<S: Screen> Host<Owned, S> {
         }
     }
 
-    fn redraw(&mut self) {
+    /// Brings the stage's clock up to now, which it only otherwise learns of when drawing.
+    fn catch_up(&mut self) {
         let now = Instant::now();
         let elapsed = now.duration_since(self.last_frame);
         self.last_frame = now;
         self.stage.advance(elapsed);
+    }
+
+    fn redraw(&mut self) {
+        self.catch_up();
         if self.stage.screen.is_ready_to_close() {
             self.close();
             return;
@@ -227,6 +261,28 @@ impl<S: Screen> Host<Owned, S> {
         window.pre_present_notify();
         buffer.present().expect("present frame");
         self.sync_browser();
+        self.sync_ime();
+    }
+
+    /// Turns the input method on while a field has focus, and points it at the caret.
+    fn sync_ime(&mut self) {
+        let area = self.stage.screen.text_input_area();
+        let Some(window) = self.window().cloned() else {
+            return;
+        };
+        if area == self.ime_area {
+            return;
+        }
+        if area.is_some() != self.ime_area.is_some() {
+            window.set_ime_allowed(area.is_some());
+        }
+        if let Some(area) = area {
+            window.set_ime_cursor_area(
+                LogicalPosition::new(area.left, area.top),
+                LogicalSize::new(area.width(), area.height()),
+            );
+        }
+        self.ime_area = area;
     }
 
     /// Opens, moves or closes the native browser to match what the screen just drew.
@@ -271,19 +327,45 @@ impl<S: Screen> Host<Owned, S> {
     }
 
     fn translate_key(&mut self, key: &WinitKey, text: Option<&str>) -> Option<Key> {
-        let command = if cfg!(target_os = "macos") {
-            self.modifiers.super_key()
+        let mac = cfg!(target_os = "macos");
+        let modifiers = self.modifiers;
+        let command = if mac {
+            modifiers.super_key()
         } else {
-            self.modifiers.control_key()
+            modifiers.control_key()
+        };
+        let word = if mac {
+            modifiers.alt_key()
+        } else {
+            modifiers.control_key()
+        };
+        let select = modifiers.shift_key();
+        // On macOS Command with an arrow goes to the line's end, as Home and End do elsewhere.
+        let along = |by_char, by_word, to_end| match (mac && command, word) {
+            (true, _) => to_end,
+            (false, true) => by_word,
+            (false, false) => by_char,
         };
         if let WinitKey::Named(named) = key {
             return Some(match named {
-                NamedKey::Backspace => Key::Backspace,
-                NamedKey::Delete => Key::Delete,
-                NamedKey::ArrowLeft => Key::Left,
-                NamedKey::ArrowRight => Key::Right,
-                NamedKey::Home | NamedKey::ArrowUp => Key::Home,
-                NamedKey::End | NamedKey::ArrowDown => Key::End,
+                NamedKey::Backspace => Key::Backspace { word },
+                NamedKey::Delete => Key::Delete { word },
+                NamedKey::ArrowLeft => Key::Move {
+                    to: along(Motion::Left, Motion::WordLeft, Motion::Start),
+                    select,
+                },
+                NamedKey::ArrowRight => Key::Move {
+                    to: along(Motion::Right, Motion::WordRight, Motion::End),
+                    select,
+                },
+                NamedKey::Home | NamedKey::ArrowUp => Key::Move {
+                    to: Motion::Start,
+                    select,
+                },
+                NamedKey::End | NamedKey::ArrowDown => Key::Move {
+                    to: Motion::End,
+                    select,
+                },
                 NamedKey::Enter => Key::Enter,
                 NamedKey::Escape => Key::Escape,
                 NamedKey::Space if !command => Key::Text(" ".into()),
@@ -305,6 +387,12 @@ impl<S: Screen> Host<Owned, S> {
         }
         text.filter(|text| !text.is_empty())
             .map(|text| Key::Text(text.to_string()))
+    }
+
+    fn send_key(&mut self, key: Key) {
+        let effect = self.stage.key(key);
+        self.apply(effect);
+        self.request_redraw();
     }
 }
 
@@ -339,6 +427,7 @@ impl<S: Screen> ApplicationHandler<HostEvent> for Host<Owned, S> {
             return;
         }
         webview::install_edit_menu();
+        show_icon_outside_bundle();
         let window = Arc::new(
             event_loop
                 .create_window(attributes(self.size, &self.title))
@@ -400,7 +489,10 @@ impl<S: Screen> ApplicationHandler<HostEvent> for Host<Owned, S> {
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let effect = match (button, state) {
-                    (MouseButton::Left, ElementState::Pressed) => self.stage.pointer_down(),
+                    (MouseButton::Left, ElementState::Pressed) => {
+                        self.catch_up();
+                        self.stage.pointer_down(self.modifiers.shift_key())
+                    }
                     (MouseButton::Left, ElementState::Released) => self.stage.pointer_up(),
                     (MouseButton::Right, ElementState::Pressed) => self.stage.secondary_click(),
                     _ => None,
@@ -419,11 +511,13 @@ impl<S: Screen> ApplicationHandler<HostEvent> for Host<Owned, S> {
             WindowEvent::KeyboardInput { event, .. } if event.state == ElementState::Pressed => {
                 let text = event.text.as_ref().map(|text| text.to_string());
                 if let Some(key) = self.translate_key(&event.logical_key, text.as_deref()) {
-                    let effect = self.stage.screen.key(key);
-                    self.apply(effect);
-                    self.request_redraw();
+                    self.send_key(key);
                 }
             }
+            WindowEvent::Ime(Ime::Preedit(text, cursor)) => {
+                self.send_key(Key::Compose(text, cursor))
+            }
+            WindowEvent::Ime(Ime::Commit(text)) => self.send_key(Key::Commit(text)),
             _ => {}
         }
         if self.state.is_none() {

@@ -3,7 +3,7 @@
 
 use std::time::Duration;
 
-use skia_safe::{Canvas, Point, Size};
+use skia_safe::{Canvas, Point, Rect, Size};
 
 use crate::shell::browser::BrowserRequest;
 use crate::text::{self, TextSystem};
@@ -22,15 +22,35 @@ pub enum Effect {
     Reveal(std::path::PathBuf),
 }
 
+/// Where a caret move goes in a single-line field.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Motion {
+    Left,
+    Right,
+    WordLeft,
+    WordRight,
+    Start,
+    End,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Key {
     Text(String),
-    Backspace,
-    Delete,
-    Left,
-    Right,
-    Home,
-    End,
+    /// An input method's unconfirmed text, with the selection inside it as byte offsets; empty
+    /// when it is withdrawn.
+    Compose(String, Option<(usize, usize)>),
+    /// Text an input method confirmed.
+    Commit(String),
+    Backspace {
+        word: bool,
+    },
+    Delete {
+        word: bool,
+    },
+    Move {
+        to: Motion,
+        select: bool,
+    },
     Enter,
     Escape,
     SelectAll,
@@ -39,10 +59,28 @@ pub enum Key {
     Paste(String),
 }
 
+/// A primary button press: how many in quick succession, and whether Shift extends a selection.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Press {
+    pub point: Point,
+    pub clicks: u8,
+    pub extend: bool,
+}
+
 pub trait Screen {
     fn render(&mut self, ui: &mut Ui, size: Size);
     fn handle(&mut self, action: Action, pointer: Point, text: &TextSystem) -> Option<Effect>;
-    fn key(&mut self, key: Key) -> Option<Effect>;
+    /// An action that acts as the button goes down, such as placing a caret.
+    fn press(&mut self, action: Action, press: Press, text: &TextSystem) -> Option<Effect> {
+        self.handle(action, press.point, text)
+    }
+    /// The pointer moved with the button held after a `press`, extending a text selection.
+    fn drag(&mut self, _pointer: Point, _text: &TextSystem) {}
+    fn key(&mut self, key: Key, text: &TextSystem) -> Option<Effect>;
+    /// Where text is being typed, in window points, so input methods can place their panels.
+    fn text_input_area(&self) -> Option<Rect> {
+        None
+    }
     fn scroll(&mut self, delta_y: f32);
     fn tick(&mut self, elapsed: Duration);
     /// How soon the screen needs another frame, or `None` when it is idle.
@@ -68,6 +106,9 @@ pub trait Screen {
 }
 
 const TOOLTIP_DELAY: Duration = Duration::from_millis(800);
+/// AppKit's default double-click interval, and how far apart its clicks may land.
+const MULTI_CLICK: Duration = Duration::from_millis(500);
+const MULTI_CLICK_SLOP: f32 = 4.0;
 
 pub struct Stage<S> {
     pub screen: S,
@@ -77,6 +118,9 @@ pub struct Stage<S> {
     hits: Vec<Hit>,
     pointer: Point,
     pressed: Option<Action>,
+    /// A press placed a caret, so moving the pointer selects text until release.
+    is_selecting: bool,
+    last_click: Option<(Duration, Point, u8)>,
     time: Duration,
     hover_started: Duration,
 }
@@ -91,6 +135,8 @@ impl<S: Screen> Stage<S> {
             hits: vec![],
             pointer: Point::new(-1.0, -1.0),
             pressed: None,
+            is_selecting: false,
+            last_click: None,
             time: Duration::ZERO,
             hover_started: Duration::ZERO,
         }
@@ -150,6 +196,10 @@ impl<S: Screen> Stage<S> {
         let before = self.top().map(|hit| hit.action.clone());
         self.pointer = pointer;
         let after = self.top().map(|hit| hit.action.clone());
+        if self.is_selecting {
+            self.screen.drag(pointer, &self.text);
+            return true;
+        }
         if before != after {
             self.hover_started = self.time;
         }
@@ -165,18 +215,39 @@ impl<S: Screen> Stage<S> {
         (self.hover_started + TOOLTIP_DELAY).checked_sub(self.time)
     }
 
-    pub fn pointer_down(&mut self) -> Option<Effect> {
+    pub fn pointer_down(&mut self, extend: bool) -> Option<Effect> {
         self.hover_started = self.time;
         let action = self.top()?.action.clone();
         // These act as the button goes down; everything else waits for release, like AppKit.
         if matches!(action, Action::DragWindow | Action::FocusField(..)) {
-            return self.screen.handle(action, self.pointer, &self.text);
+            let clicks = match self.last_click {
+                Some((at, point, clicks))
+                    if self.time.saturating_sub(at) <= MULTI_CLICK
+                        && (point - self.pointer).length() <= MULTI_CLICK_SLOP =>
+                {
+                    clicks % 3 + 1
+                }
+                _ => 1,
+            };
+            self.last_click = Some((self.time, self.pointer, clicks));
+            self.is_selecting = matches!(action, Action::FocusField(..));
+            let press = Press {
+                point: self.pointer,
+                clicks,
+                extend,
+            };
+            return self.screen.press(action, press, &self.text);
         }
         self.pressed = Some(action);
         None
     }
 
+    pub fn key(&mut self, key: Key) -> Option<Effect> {
+        self.screen.key(key, &self.text)
+    }
+
     pub fn pointer_up(&mut self) -> Option<Effect> {
+        self.is_selecting = false;
         let pressed = self.pressed.take()?;
         let released = self.top().map(|hit| hit.action.clone());
         (released.as_ref() == Some(&pressed))
@@ -192,7 +263,7 @@ impl<S: Screen> Stage<S> {
     /// A full press and release at `point`, for tests.
     pub fn click(&mut self, point: Point) -> Option<Effect> {
         self.pointer_moved(point);
-        self.pointer_down().or_else(|| self.pointer_up())
+        self.pointer_down(false).or_else(|| self.pointer_up())
     }
 }
 

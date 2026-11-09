@@ -1,0 +1,84 @@
+# Pushing a tag like v1.2.0 builds Loudible.app, packs it into a DMG and publishes a GitHub
+# release with it. Tags with a suffix (v1.2.0-beta.1) become pre-releases.
+#
+# Signing and notarization use these repository secrets; without them the DMG is ad-hoc signed,
+# which Gatekeeper blocks on other Macs:
+#   MACOS_CERTIFICATE           base64 of the "Developer ID Application" certificate as .p12
+#   MACOS_CERTIFICATE_PASSWORD  the .p12's password
+#   NOTARY_APPLE_ID             the Apple ID of the developer account
+#   NOTARY_PASSWORD             an app-specific password for it (appleid.apple.com)
+# and these repository variables, which every signed copy of the app shows anyway:
+#   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Bertalan Körmendy (TEAMID)"
+#   NOTARY_TEAM_ID              the 10-character team ID
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    # Xcode 26's actool compiles the .icon app icon.
+    runs-on: macos-26
+    env:
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      # Ad-hoc until the certificate is there to sign with.
+      SIGNING_IDENTITY: ${{ secrets.MACOS_CERTIFICATE != '' && vars.MACOS_SIGNING_IDENTITY || '' }}
+      NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+      NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+      NOTARY_TEAM_ID: ${{ vars.NOTARY_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Cache FFmpeg
+        uses: actions/cache@v4
+        with:
+          path: Vendor
+          key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Scripts/ffmpeg-version.sh', 'Scripts/build-ffmpeg.sh') }}
+
+      - name: Import the signing certificate
+        if: env.MACOS_CERTIFICATE != ''
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/certificate.p12"
+
+      - name: Build the app
+        run: APP_VERSION="${GITHUB_REF_NAME#v}" Scripts/build-app.sh
+
+      - name: Verify the app
+        run: Scripts/verify-app.sh
+
+      - name: Build the DMG
+        run: |
+          Scripts/make-dmg.sh
+          mv build/Loudible.dmg "build/Loudible-${GITHUB_REF_NAME#v}.dmg"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" "build/Loudible-${GITHUB_REF_NAME#v}.dmg" \
+            --title "Loudible ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag "${prerelease[@]}"
+
+      - name: Remove the signing keychain
+        if: always() && env.MACOS_CERTIFICATE != ''
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true

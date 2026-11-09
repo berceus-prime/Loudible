@@ -85,7 +85,7 @@ impl Screen for GalleryView {
         None
     }
 
-    fn key(&mut self, _: Key) -> Option<Effect> {
+    fn key(&mut self, _: Key, _: &TextSystem) -> Option<Effect> {
         None
     }
 

@@ -1,8 +1,10 @@
 #!/bin/bash
-# Builds a self-contained, ad-hoc signed build/Loudible.app for Apple Silicon.
+# Builds a self-contained build/Loudible.app for Apple Silicon: ad-hoc signed, or with a Developer
+# ID and the hardened runtime that notarization needs when SIGNING_IDENTITY names one.
 #
 #   Scripts/build-app.sh
 #   APP_VERSION=1.2.0 Scripts/build-app.sh
+#   SIGNING_IDENTITY="Developer ID Application: … (TEAMID)" Scripts/build-app.sh
 #
 # Run Scripts/verify-app.sh afterwards to check the bundle.
 set -euo pipefail
@@ -59,6 +61,8 @@ xcrun actool Resources/AppIcon.icon --compile "$APP/Contents/Resources" --platfo
     --minimum-deployment-target "$FFMPEG_MINIMUM_MACOS" --app-icon AppIcon \
     --output-partial-info-plist "$PARTIAL_PLIST" > /dev/null
 rm -f "$PARTIAL_PLIST"
+# The Dock icon for `cargo run`, which has no bundle; commit it when the icon changes.
+sips -s format png -Z 512 "$APP/Contents/Resources/AppIcon.icns" --out Resources/AppIcon.png > /dev/null
 
 echo "Bundling libraries…"
 Scripts/bundle_dylibs.py "$APP/Contents/MacOS/$APP_NAME" "$APP/Contents/Frameworks" > build/bundled-libraries.tsv
@@ -67,10 +71,16 @@ echo "  $(wc -l < build/bundled-libraries.tsv | tr -d ' ') libraries"
 echo "Writing third-party notices…"
 Scripts/write-notices.py "$FFMPEG_PREFIX" "$APP/Contents/Resources" "bundled in Contents/Frameworks"
 
-echo "Signing (ad-hoc)…"
+if [ -n "${SIGNING_IDENTITY:-}" ]; then
+    echo "Signing as $SIGNING_IDENTITY…"
+    SIGN_FLAGS=(--sign "$SIGNING_IDENTITY" --options runtime --timestamp)
+else
+    echo "Signing (ad-hoc)…"
+    SIGN_FLAGS=(--sign - --timestamp=none)
+fi
 for dylib in "$APP/Contents/Frameworks/"*.dylib; do
-    codesign --force --sign - --timestamp=none "$dylib"
+    codesign --force "${SIGN_FLAGS[@]}" "$dylib"
 done
-codesign --force --sign - --timestamp=none "$APP"
+codesign --force "${SIGN_FLAGS[@]}" "$APP"
 
 echo "Built $APP (minimum macOS $FFMPEG_MINIMUM_MACOS)"

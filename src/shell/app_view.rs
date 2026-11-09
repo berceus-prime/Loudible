@@ -9,8 +9,8 @@ use crate::model::{AppModel, Asin, BookAction, Marketplace, MockApp, MockOptions
 use crate::shell::browser::{BrowserPage, BrowserRequest};
 use crate::shell::covers::CoverStore;
 use crate::shell::webview::LoginWebView;
-use crate::stage::{Effect, Key, Screen};
-use crate::text::{self, TextSystem, Weight};
+use crate::stage::{Effect, Key, Press, Screen};
+use crate::text::{self, TextSystem};
 use crate::ui::{Action, Field, Ui};
 use crate::views::{
     account::{self, PopoverContent, SignInProps},
@@ -41,6 +41,8 @@ pub struct AppView<M = MockApp> {
     search: TextField,
     pasted: TextField,
     focus: Option<Field>,
+    /// Where the focused field's text starts, from the press that focused it.
+    field_origin: f32,
     popup: Option<Popup>,
     pending_delete: Option<Asin>,
     is_confirming_quit: bool,
@@ -69,9 +71,10 @@ impl<M: AppModel> AppView<M> {
     pub fn with_app(app: M) -> Self {
         Self {
             app,
-            search: TextField::default(),
-            pasted: TextField::default(),
+            search: TextField::new(toolbar::SEARCH_TEXT),
+            pasted: TextField::new(text::BODY),
             focus: None,
+            field_origin: 0.0,
             popup: None,
             pending_delete: None,
             is_confirming_quit: false,
@@ -128,13 +131,37 @@ impl<M: AppModel> AppView<M> {
         }
     }
 
+    fn field(&self, field: Field) -> &TextField {
+        match field {
+            Field::Search => &self.search,
+            Field::PastedUrl => &self.pasted,
+        }
+    }
+
+    /// Moves focus, dropping the selection of the field it leaves.
+    fn set_focus(&mut self, focus: Option<Field>, text: &TextSystem) {
+        if let Some(previous) = self.focus
+            && focus != Some(previous)
+        {
+            self.field_mut(previous).blur(text);
+        }
+        self.focus = focus;
+    }
+
+    fn press_field(&mut self, field: Field, origin: f32, press: Press, text: &TextSystem) {
+        self.set_focus(Some(field), text);
+        self.field_origin = origin;
+        self.field_mut(field)
+            .press(press.point.x - origin, press.clicks, press.extend, text);
+    }
+
     fn sync_field(&mut self, field: Field) {
         match field {
             Field::Search => {
-                self.app.set_search(self.search.text.clone());
+                self.app.set_search(self.search.text());
                 self.scroll = 0.0;
             }
-            Field::PastedUrl => self.app.set_pasted_url(self.pasted.text.clone()),
+            Field::PastedUrl => self.app.set_pasted_url(self.pasted.text()),
         }
     }
 
@@ -450,9 +477,30 @@ impl<M: AppModel> Screen for AppView<M> {
         self.draw_popups(ui, size);
     }
 
+    fn press(&mut self, action: Action, press: Press, text: &TextSystem) -> Option<Effect> {
+        match action {
+            Action::FocusField(field, origin) => {
+                self.press_field(field, origin, press, text);
+                None
+            }
+            action => self.handle(action, press.point, text),
+        }
+    }
+
+    fn drag(&mut self, pointer: Point, text: &TextSystem) {
+        if let Some(field) = self.focus {
+            let origin = self.field_origin;
+            self.field_mut(field).drag(pointer.x - origin, text);
+        }
+    }
+
+    fn text_input_area(&self) -> Option<Rect> {
+        self.field(self.focus?).input_area()
+    }
+
     fn handle(&mut self, action: Action, pointer: Point, text: &TextSystem) -> Option<Effect> {
         if !matches!(action, Action::FocusField(..)) {
-            self.focus = None;
+            self.set_focus(None, text);
         }
         match action {
             Action::Block => {}
@@ -492,12 +540,12 @@ impl<M: AppModel> Screen for AppView<M> {
             Action::SignIn => {
                 self.popup = None;
                 self.shows_fallback = !LoginWebView::IS_AVAILABLE;
-                self.pasted = TextField::default();
+                self.pasted = TextField::new(text::BODY);
                 self.app.sign_in();
             }
             Action::SignOut => {
                 self.popup = None;
-                self.search = TextField::default();
+                self.search = TextField::new(toolbar::SEARCH_TEXT);
                 self.app.sign_out();
             }
             Action::OpenMarketplaceMenu(anchor) => {
@@ -511,17 +559,15 @@ impl<M: AppModel> Screen for AppView<M> {
                 self.app.set_marketplace(marketplace);
             }
             Action::FocusField(field, origin) => {
-                self.focus = Some(field);
-                let style = match field {
-                    Field::Search => text::BODY.weight(Weight::Medium),
-                    Field::PastedUrl => text::BODY,
+                let press = Press {
+                    point: pointer,
+                    clicks: 1,
+                    extend: false,
                 };
-                let target = self.field_mut(field);
-                let caret = text.caret_index(&target.text, style, pointer.x - origin);
-                target.move_to(caret);
+                self.press_field(field, origin, press, text);
             }
             Action::ClearSearch => {
-                self.search = TextField::default();
+                self.search = TextField::new(toolbar::SEARCH_TEXT);
                 self.sync_field(Field::Search);
                 self.focus = Some(Field::Search);
             }
@@ -531,8 +577,8 @@ impl<M: AppModel> Screen for AppView<M> {
                     return Some(Effect::OpenUrl(url));
                 }
                 self.pasted.set(
-                    "https://www.amazon.com/ap/maplanding?openid.oa2.authorization_code=MOCK"
-                        .into(),
+                    "https://www.amazon.com/ap/maplanding?openid.oa2.authorization_code=MOCK",
+                    text,
                 );
                 self.sync_field(Field::PastedUrl);
             }
@@ -566,7 +612,7 @@ impl<M: AppModel> Screen for AppView<M> {
         None
     }
 
-    fn key(&mut self, key: Key) -> Option<Effect> {
+    fn key(&mut self, key: Key, text: &TextSystem) -> Option<Effect> {
         if key == Key::Escape {
             if self.popup.take().is_none() {
                 if std::mem::take(&mut self.is_confirming_quit)
@@ -577,7 +623,7 @@ impl<M: AppModel> Screen for AppView<M> {
                 } else if self.app.selected_count() > 0 {
                     self.app.clear_selection();
                 } else {
-                    self.focus = None;
+                    self.set_focus(None, text);
                 }
             }
             return None;
@@ -593,28 +639,20 @@ impl<M: AppModel> Screen for AppView<M> {
         };
         let mut effect = None;
         let target = self.field_mut(field);
+        let before = target.text();
         match key {
-            Key::Text(text) => target.insert(&text),
-            Key::Paste(text) => target.insert(&text),
-            Key::Backspace => target.backspace(),
-            Key::Delete => target.delete_forward(),
-            Key::Left => target.move_left(),
-            Key::Right => target.move_right(),
-            Key::Home => target.move_to(0),
-            Key::End => {
-                let end = target.text.len();
-                target.move_to(end);
-            }
-            Key::SelectAll => target.select_all(),
-            Key::Copy => {
-                effect = target
-                    .all_selected
-                    .then(|| Effect::Copy(target.text.clone()))
-            }
+            Key::Text(typed) | Key::Paste(typed) => target.insert(&typed, text),
+            Key::Compose(composed, cursor) => target.compose(&composed, cursor, text),
+            Key::Commit(committed) => target.commit(&committed, text),
+            Key::Backspace { word } => target.backspace(word, text),
+            Key::Delete { word } => target.delete(word, text),
+            Key::Move { to, select } => target.move_caret(to, select, text),
+            Key::SelectAll => target.select_all(text),
+            Key::Copy => effect = target.selected_text().map(Effect::Copy),
             Key::Cut => {
-                if target.all_selected {
-                    effect = Some(Effect::Copy(target.text.clone()));
-                    target.backspace();
+                if let Some(selected) = target.selected_text() {
+                    effect = Some(Effect::Copy(selected));
+                    target.delete_selection(text);
                 }
             }
             Key::Enter => {
@@ -625,7 +663,9 @@ impl<M: AppModel> Screen for AppView<M> {
             }
             Key::Escape => {}
         }
-        self.sync_field(field);
+        if target.text() != before {
+            self.sync_field(field);
+        }
         effect
     }
 

@@ -1,4 +1,4 @@
-# skia-ui
+# Loudible
 
 Loudible's window drawn directly with [Skia](https://github.com/rust-skia/rust-skia), over the Rust
 engine in `crates/`. `--mock` runs the same window over synthetic data, without contacting
@@ -30,8 +30,12 @@ FFmpeg and packaging, from this directory:
 Scripts/build-ffmpeg.sh        # LGPL FFmpeg into Vendor/ (once; the other scripts run it too)
 Scripts/build-app.sh           # macOS: build/Loudible.app, ad-hoc signed
 Scripts/verify-app.sh          # architecture, signatures, bundled FFmpeg, notices, self-test
+Scripts/make-dmg.sh            # macOS: build/Loudible.dmg from the app, notarized with credentials
 Scripts/package.sh             # Linux or Windows (MSYS2): a portable folder in build/
 ```
+
+Pushing a tag like `v1.2.0` runs `.github/workflows/release.yml`, which publishes a GitHub release
+with the DMG. The signing and notarization secrets and variables it needs are listed at its top.
 
 Without `Vendor/ffmpeg` (or `LOUDIBLE_FFMPEG_DIR`), `loudible-ffmpeg` builds empty and export is
 unavailable. To upgrade FFmpeg, follow the steps at the top of `Scripts/ffmpeg-version.sh`.

@@ -7,7 +7,7 @@ use crate::model::BookAction;
 use crate::text::{self, Weight};
 use crate::ui::{Action, Field, Ui, capsule, fill, outline};
 use crate::views::account::account_button_label;
-use crate::views::text_field::{self, TextField};
+use crate::views::text_field::TextField;
 
 pub const HEIGHT: f32 = 52.0;
 const CONTROL_Y: f32 = 8.0;
@@ -22,7 +22,7 @@ const ACCOUNT_MAX_WIDTH: f32 = 200.0;
 const SEARCH_WIDTH: f32 = 452.0;
 const TRAILING: f32 = 8.0;
 const CENTER_Y: f32 = CONTROL_Y + CONTROL_HEIGHT / 2.0;
-const SEARCH_TEXT: text::TextStyle = text::BODY.weight(Weight::Medium);
+pub(crate) const SEARCH_TEXT: text::TextStyle = text::BODY.weight(Weight::Medium);
 
 pub struct AccountLabel<'a> {
     pub name: Option<&'a str>,
@@ -118,14 +118,12 @@ fn draw_search(ui: &mut Ui, props: &ToolbarProps, width: f32, trailing_left: f32
     };
     ui.icon(Icon::Search, Point::new(left + 18.0, CENTER_Y), 13.5, color);
     let text_x = left + 33.0;
-    let clear = !props.search.text.is_empty();
+    let clear = !props.search.text().is_empty();
     let text_width = search_width - 33.0 - if clear { 34.0 } else { 14.0 };
-    text_field::draw_value(
+    props.search.draw(
         ui,
-        props.search,
         "Search title, author, narrator",
         color,
-        SEARCH_TEXT,
         (text_x, CENTER_Y - SEARCH_TEXT.line / 2.0),
         text_width,
         props.search_focused,

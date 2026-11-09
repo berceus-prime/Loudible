@@ -5,7 +5,7 @@ use skia_safe::{Point, Rect};
 use crate::icons::Icon;
 use crate::text;
 use crate::ui::{Action, Button, Field, Ui, fill, rounded};
-use crate::views::text_field::{self, TextField};
+use crate::views::text_field::TextField;
 
 const PADDING: f32 = 16.0;
 const SPACING: f32 = 10.0;
@@ -187,12 +187,10 @@ fn fallback_row(ui: &mut Ui, props: &LoginProps, x: f32, y: f32, width: f32) -> 
     ui.canvas.draw_rrect(shape, &border);
     let text_x = field.left + 8.0;
     let text_y = y + (BUTTON_HEIGHT - text::BODY.line) / 2.0;
-    text_field::draw_value(
+    props.pasted_url.draw(
         ui,
-        props.pasted_url,
         URL_HINT,
         theme.tertiary,
-        text::BODY,
         (text_x, text_y),
         field.width() - 16.0,
         props.pasted_url_focused,

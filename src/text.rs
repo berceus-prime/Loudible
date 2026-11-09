@@ -3,9 +3,18 @@
 
 use std::{cell::RefCell, collections::HashMap};
 
+use parley::fontique::{Blob, FontInfoOverride};
+use parley::setting::Tag;
+use parley::{
+    FontContext, FontData, FontFamily, FontFamilyName, FontVariation, FontVariations, FontWeight,
+    GenericFamily, Layout, LayoutContext, LineHeight, PositionedLayoutItem, StyleProperty,
+};
 use skia_safe::textlayout::Paragraph;
 use skia_safe::{
-    Canvas, Color, FontMgr, FontStyle, Point,
+    Canvas, Color, Data, Font, FontArguments, FontMgr, FontStyle, FourByteTag, Paint, Point, Rect,
+    Typeface,
+    font::Edging,
+    font_arguments::{VariationPosition, variation_position::Coordinate},
     font_style::{Slant, Weight as SkWeight, Width},
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle as SkTextStyle},
 };
@@ -76,6 +85,19 @@ const FAMILIES: &[&str] = &[
 #[cfg(not(target_os = "macos"))]
 const ROUNDED_FAMILIES: &[&str] = FAMILIES;
 
+/// The family editable text is laid out in: the font Skia picks for `FAMILIES`, registered with
+/// Parley under this name so both draw with the same file.
+const EDIT_FAMILY: &str = "skia-ui";
+
+/// The app's own font first, then the system's for scripts and emoji it lacks.
+const EDIT_FAMILIES: &[FontFamilyName<'static>] = &[
+    FontFamilyName::named(EDIT_FAMILY),
+    FontFamilyName::Generic(GenericFamily::SystemUi),
+];
+
+/// Measured both ways to find how to make edited text sit and run like drawn text.
+const SPACING_SAMPLE: &str = "The quick brown fox jumps over the lazy dog 0123456789";
+
 /// Skia sits half a point lower than AppKit in the same line box.
 const BASELINE_NUDGE: f32 = 0.5;
 const UNBOUNDED: f32 = 100_000.0;
@@ -116,6 +138,7 @@ struct Key {
 pub struct TextSystem {
     fonts: FontCollection,
     cache: RefCell<HashMap<Key, Paragraph>>,
+    editing: RefCell<Editing>,
 }
 
 impl Default for TextSystem {
@@ -125,7 +148,92 @@ impl Default for TextSystem {
         Self {
             fonts,
             cache: RefCell::new(HashMap::new()),
+            editing: RefCell::new(Editing::new()),
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Adjustment {
+    spacing: f32,
+    shift: f32,
+}
+
+/// Parley's contexts for editable text, and the Skia typefaces its glyph runs draw with.
+struct Editing {
+    font_cx: FontContext,
+    layout_cx: LayoutContext<()>,
+    /// By font blob and collection index, then the `wght` and `opsz` of a variable instance.
+    typefaces: HashMap<(u64, u32, u32, u32), Typeface>,
+    /// How editable text is adjusted to match drawn text, by font size and weight.
+    adjustments: HashMap<(u32, Weight), Adjustment>,
+}
+
+impl Editing {
+    fn new() -> Self {
+        let mut editing = Self {
+            font_cx: FontContext::new(),
+            layout_cx: LayoutContext::new(),
+            typefaces: HashMap::new(),
+            adjustments: HashMap::new(),
+        };
+        let manager = FontMgr::new();
+        let typeface = FAMILIES
+            .iter()
+            .find_map(|family| manager.match_family_style(family, FontStyle::normal()));
+        if let Some(typeface) = typeface
+            && let Some((bytes, index)) = typeface.to_font_bytes()
+        {
+            let blob = Blob::from(bytes);
+            let id = blob.id();
+            editing.font_cx.collection.register_fonts(
+                blob,
+                Some(FontInfoOverride {
+                    family_name: Some(EDIT_FAMILY),
+                    ..Default::default()
+                }),
+            );
+            // Drawing with the system's own typeface keeps its rendering, as on Skia's lines.
+            editing.typefaces.insert((id, index, 0, 0), typeface);
+        }
+        editing
+    }
+
+    /// The typeface for a run of `font`: its instance at `weight` when Parley varied it, and
+    /// at the optical size for `size`, as `TextField` asks Parley to shape with.
+    fn typeface(&mut self, font: &FontData, weight: Option<f32>, size: f32) -> Option<Typeface> {
+        let (blob, index) = (font.data.id(), font.index);
+        let key = (blob, index, weight.map_or(0, f32::to_bits), size.to_bits());
+        if let Some(typeface) = self.typefaces.get(&key) {
+            return Some(typeface.clone());
+        }
+        let base = match self.typefaces.get(&(blob, index, 0, 0)) {
+            Some(typeface) => typeface.clone(),
+            None => {
+                let data = Data::new_copy(font.data.data());
+                let typeface = FontMgr::new().new_from_data(data, index)?;
+                self.typefaces.insert((blob, index, 0, 0), typeface.clone());
+                typeface
+            }
+        };
+        let axes = base.variation_design_parameters().unwrap_or_default();
+        let coordinates: Vec<Coordinate> = [(*b"wght", weight), (*b"opsz", Some(size))]
+            .into_iter()
+            .filter_map(|(tag, value)| {
+                let axis = FourByteTag::new(u32::from_be_bytes(tag));
+                let value = value.filter(|_| axes.iter().any(|known| known.tag == axis))?;
+                Some(Coordinate { axis, value })
+            })
+            .collect();
+        let arguments = FontArguments::new().set_variation_design_position(VariationPosition {
+            coordinates: &coordinates,
+        });
+        let typeface = match coordinates.is_empty() {
+            true => base,
+            false => base.clone_with_arguments(&arguments).unwrap_or(base),
+        };
+        self.typefaces.insert(key, typeface.clone());
+        Some(typeface)
     }
 }
 
@@ -299,15 +407,124 @@ impl TextSystem {
         parts
     }
 
-    /// The byte offset of the character boundary nearest to `x` points into `text`.
-    pub fn caret_index(&self, text: &str, style: TextStyle, x: f32) -> usize {
-        let mut best = (0, x.abs());
-        for (index, _) in text.char_indices().skip(1).chain([(text.len(), ' ')]) {
-            let distance = (self.width(&text[..index], style) - x).abs();
-            if distance < best.1 {
-                best = (index, distance);
+    /// Parley styles for editable text in `style`, matching how `draw_line` sets it.
+    pub fn edit_styles(&self, style: TextStyle) -> Vec<StyleProperty<'static, ()>> {
+        let mut styles = edit_styles_unadjusted(style);
+        styles.push(StyleProperty::LetterSpacing(self.adjustment(style).spacing));
+        styles
+    }
+
+    /// How far below a line box's top to draw a Parley layout of `style`, so its baseline
+    /// lands where `draw_line` puts it.
+    pub fn edit_baseline_shift(&self, style: TextStyle) -> f32 {
+        self.adjustment(style).shift
+    }
+
+    fn adjustment(&self, style: TextStyle) -> Adjustment {
+        let key = (style.size.to_bits(), style.weight);
+        if let Some(adjustment) = self.editing.borrow().adjustments.get(&key) {
+            return *adjustment;
+        }
+        let adjustment = self.measure_adjustment(style);
+        self.editing
+            .borrow_mut()
+            .adjustments
+            .insert(key, adjustment);
+        adjustment
+    }
+
+    /// Skia rounds each advance and then applies `tracking`, while Parley keeps advances
+    /// fractional; and the two split a line box differently. Rather than reason about either,
+    /// measure the same sample both ways and make up the difference.
+    fn measure_adjustment(&self, style: TextStyle) -> Adjustment {
+        let (drawn_width, drawn_baseline) =
+            self.with_line(SPACING_SAMPLE, style, Color::BLACK, |line| {
+                let top = (style.line - line.height()) / 2.0 - BASELINE_NUDGE;
+                // Skia's paragraph paints on a whole-point baseline below its top.
+                let baseline = (line.alphabetic_baseline() + 0.5).floor();
+                (line.max_intrinsic_width(), top + baseline)
+            });
+        let (edited_width, edited_baseline) = self.edit(|fonts, layouts| {
+            let mut builder = layouts.ranged_builder(fonts, SPACING_SAMPLE, 1.0, true);
+            for property in edit_styles_unadjusted(style) {
+                builder.push_default(property);
+            }
+            let mut layout = builder.build(SPACING_SAMPLE);
+            layout.break_all_lines(None);
+            (
+                layout.full_width(),
+                layout.first_baseline().unwrap_or_default(),
+            )
+        });
+        Adjustment {
+            spacing: (drawn_width - edited_width) / SPACING_SAMPLE.chars().count() as f32,
+            shift: drawn_baseline - edited_baseline,
+        }
+    }
+
+    /// Runs `edit` with Parley's contexts, for driving a `PlainEditor`.
+    pub fn edit<R>(&self, edit: impl FnOnce(&mut FontContext, &mut LayoutContext<()>) -> R) -> R {
+        let editing = &mut *self.editing.borrow_mut();
+        edit(&mut editing.font_cx, &mut editing.layout_cx)
+    }
+
+    /// Paints a Parley layout with its top-left at `origin`, underlining the runs that ask for
+    /// it (an input method's unconfirmed text).
+    pub fn draw_layout(&self, canvas: &Canvas, layout: &Layout<()>, origin: Point, color: Color) {
+        let editing = &mut *self.editing.borrow_mut();
+        let mut paint = Paint::default();
+        paint.set_anti_alias(true).set_color(color);
+        for line in layout.lines() {
+            for item in line.items() {
+                let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
+                    continue;
+                };
+                let run = glyph_run.run();
+                let weight = run
+                    .synthesis()
+                    .variation_settings()
+                    .iter()
+                    .find(|(tag, _)| tag.to_be_bytes() == *b"wght")
+                    .map(|(_, value)| *value);
+                let Some(typeface) = editing.typeface(run.font(), weight, run.font_size()) else {
+                    continue;
+                };
+                let mut font = Font::from_typeface(typeface, run.font_size());
+                font.set_subpixel(true);
+                font.set_edging(Edging::AntiAlias);
+                font.set_embolden(run.synthesis().embolden());
+                let (glyphs, positions): (Vec<u16>, Vec<Point>) = glyph_run
+                    .positioned_glyphs()
+                    .map(|glyph| (glyph.id as u16, Point::new(glyph.x, glyph.y)))
+                    .unzip();
+                canvas.draw_glyphs_at(&glyphs, positions.as_slice(), origin, &font, &paint);
+                if let Some(underline) = &glyph_run.style().underline {
+                    let metrics = run.font_metrics();
+                    let offset = underline.offset.unwrap_or(metrics.underline_offset);
+                    let size = underline.size.unwrap_or(metrics.underline_size).max(1.0);
+                    let top = origin.y + glyph_run.baseline() - offset;
+                    let left = origin.x + glyph_run.offset();
+                    canvas.draw_rect(
+                        Rect::from_xywh(left, top, glyph_run.advance(), size),
+                        &paint,
+                    );
+                }
             }
         }
-        best.0
     }
+}
+
+fn edit_styles_unadjusted(style: TextStyle) -> Vec<StyleProperty<'static, ()>> {
+    // CoreText picks San Francisco's optical size from the point size; Parley does not.
+    let optical = FontVariation {
+        tag: Tag::new(b"opsz"),
+        value: style.size,
+    };
+    vec![
+        StyleProperty::FontFamily(FontFamily::List(EDIT_FAMILIES.into())),
+        StyleProperty::FontSize(style.size),
+        StyleProperty::FontWeight(FontWeight::new(style.weight as i32 as f32)),
+        StyleProperty::FontVariations(FontVariations::List(vec![optical].into())),
+        StyleProperty::LineHeight(LineHeight::Absolute(style.line)),
+    ]
 }
