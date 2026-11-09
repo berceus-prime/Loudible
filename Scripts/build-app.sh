@@ -72,7 +72,7 @@ echo "Writing third-party notices…"
 Scripts/write-notices.py "$FFMPEG_PREFIX" "$APP/Contents/Resources" "bundled in Contents/Frameworks"
 
 if [ -n "${SIGNING_IDENTITY:-}" ]; then
-    echo "Signing as $SIGNING_IDENTITY…"
+    echo "Signing as ${SIGNING_IDENTITY}…"
     SIGN_FLAGS=(--sign "$SIGNING_IDENTITY" --options runtime --timestamp)
 else
     echo "Signing (ad-hoc)…"
