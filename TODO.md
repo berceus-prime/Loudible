@@ -1,2 +1,0 @@
-- Use Parley instead of the hand rolled text editor https://docs.rs/crate/parley/0.9.0/source/src/editing/editor.rs
-- Set up FFMpeg on Windows too
