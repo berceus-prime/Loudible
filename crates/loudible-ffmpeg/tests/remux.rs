@@ -232,6 +232,31 @@ fn read(path: PathBuf) -> Vec<u8> {
     std::fs::read(path).unwrap()
 }
 
+/// What a failed conversion must leave untouched.
+const EXISTING: &[u8] = b"previous file";
+
+impl Fixture {
+    fn assert_no_partial_files(&self) {
+        let partial: Vec<_> = std::fs::read_dir(self.directory.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".partial"))
+            .collect();
+        assert!(partial.is_empty(), "left behind: {partial:?}");
+    }
+
+    async fn convert_cancelling_midway(
+        &self,
+        request: ConversionRequest,
+    ) -> Result<(), ExporterError> {
+        let cancel = CancellationToken::new();
+        let trigger = cancel.clone();
+        self.converter
+            .convert(request, Arc::new(move |_| trigger.cancel()), &cancel)
+            .await
+    }
+}
+
 #[tokio::test]
 async fn remuxes_audio_with_chapters_and_metadata() {
     let f = fixture();
@@ -391,6 +416,7 @@ async fn a_missing_input_is_described_and_leaves_nothing() {
         "{result:?}"
     );
     assert!(!f.directory.join("out.m4b").exists());
+    f.assert_no_partial_files();
 }
 
 #[tokio::test]
@@ -403,6 +429,7 @@ async fn a_file_without_audio_is_rejected() {
         "{result:?}"
     );
     assert!(!f.directory.join("out.m4b").exists());
+    f.assert_no_partial_files();
 }
 
 #[tokio::test]
@@ -416,6 +443,7 @@ async fn cancelling_first_produces_nothing() {
         .await;
     assert_eq!(result, Err(ExporterError::Cancelled));
     assert!(!f.directory.join("out.m4b").exists());
+    f.assert_no_partial_files();
 }
 
 #[tokio::test]
@@ -433,6 +461,7 @@ async fn cancelling_midway_stops_and_removes_the_output() {
         .await;
     assert_eq!(result, Err(ExporterError::Cancelled));
     assert!(!f.directory.join("out.m4b").exists());
+    f.assert_no_partial_files();
 }
 
 #[tokio::test]
@@ -451,8 +480,131 @@ async fn a_panicking_callback_fails_the_conversion_without_crossing_c() {
         "{result:?}"
     );
     assert!(!f.directory.join("out.m4b").exists());
+    f.assert_no_partial_files();
     // The worker survives.
     f.convert(f.request("in.aaxc", "after.m4b")).await.unwrap();
+}
+
+#[tokio::test]
+async fn success_replaces_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    f.convert(f.request("in.aaxc", "out.m4b")).await.unwrap();
+    assert!(contains(
+        &read(f.directory.join("out.m4b")),
+        b"The Synthetic Novel"
+    ));
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn a_missing_input_keeps_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    let result = f.convert(f.request("absent.aaxc", "out.m4b")).await;
+    assert!(
+        matches!(result, Err(ExporterError::Conversion(_))),
+        "{result:?}"
+    );
+    assert_eq!(read(f.directory.join("out.m4b")), EXISTING);
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn a_rejected_input_keeps_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("junk.aaxc"), b"this is not audio").unwrap();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    let result = f.convert(f.request("junk.aaxc", "out.m4b")).await;
+    assert!(
+        matches!(result, Err(ExporterError::Conversion(_))),
+        "{result:?}"
+    );
+    assert_eq!(read(f.directory.join("out.m4b")), EXISTING);
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn cancelling_first_keeps_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+    let result = f
+        .converter
+        .convert(f.request("in.aaxc", "out.m4b"), Arc::new(|_| {}), &cancel)
+        .await;
+    assert_eq!(result, Err(ExporterError::Cancelled));
+    assert_eq!(read(f.directory.join("out.m4b")), EXISTING);
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn cancelling_midway_keeps_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    let result = f
+        .convert_cancelling_midway(f.request("in.aaxc", "out.m4b"))
+        .await;
+    assert_eq!(result, Err(ExporterError::Cancelled));
+    assert_eq!(read(f.directory.join("out.m4b")), EXISTING);
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn a_panicking_callback_keeps_an_existing_output() {
+    let f = fixture();
+    std::fs::write(f.directory.join("out.m4b"), EXISTING).unwrap();
+    let result = f
+        .converter
+        .convert(
+            f.request("in.aaxc", "out.m4b"),
+            Arc::new(|_| panic!("synthetic panic")),
+            &CancellationToken::new(),
+        )
+        .await;
+    assert!(
+        matches!(result, Err(ExporterError::Unexpected(_))),
+        "{result:?}"
+    );
+    assert_eq!(read(f.directory.join("out.m4b")), EXISTING);
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn converting_a_file_onto_itself_replaces_it_on_success() {
+    let f = fixture();
+    f.convert(f.request("in.aaxc", "in.aaxc")).await.unwrap();
+    let output = read(f.directory.join("in.aaxc"));
+    assert!(contains(&output, &FRAME.repeat(FRAMES as usize)));
+    assert!(contains(&output, b"The Synthetic Novel"));
+    assert!(position(&output, b"moov") < position(&output, b"mdat"));
+    f.assert_no_partial_files();
+}
+
+#[tokio::test]
+async fn a_failed_conversion_onto_itself_keeps_the_input() {
+    let f = fixture();
+    let result = f
+        .convert_cancelling_midway(f.request("in.aaxc", "in.aaxc"))
+        .await;
+    assert_eq!(result, Err(ExporterError::Cancelled));
+    assert_eq!(read(f.directory.join("in.aaxc")), synthetic_m4a());
+    f.assert_no_partial_files();
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn the_output_gets_the_usual_file_mode() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = fixture();
+    f.convert(f.request("in.aaxc", "out.m4b")).await.unwrap();
+    std::fs::File::create(f.directory.join("plain")).unwrap();
+    let mode = |name: &str| {
+        let metadata = std::fs::metadata(f.directory.join(name)).unwrap();
+        metadata.permissions().mode() & 0o777
+    };
+    assert_eq!(mode("out.m4b"), mode("plain"));
 }
 
 #[tokio::test]

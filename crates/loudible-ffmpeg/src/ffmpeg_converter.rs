@@ -10,6 +10,7 @@ use loudible_core::{
     AudioConverter, BookMetadata, ConversionProgressSink, ConversionRequest, Decryption,
     ExporterError, hex_encoding,
 };
+use tempfile::TempPath;
 use tokio::sync::oneshot;
 use tokio_util::sync::CancellationToken;
 
@@ -22,6 +23,9 @@ type Job = Box<dyn FnOnce() + Send>;
 
 /// Decrypts AAX/AAXC with FFmpeg's MOV demuxer and remuxes the compressed audio (no
 /// re-encoding) and cover art into an M4B with the license's chapters and book metadata.
+///
+/// FFmpeg writes to a hidden `.partial` file beside the output, which replaces the output only
+/// when the conversion succeeds, so a failure never touches an existing output or its input.
 ///
 /// Conversions run one at a time on a dedicated thread, never on the async runtime.
 pub struct FfmpegConverter {
@@ -51,17 +55,50 @@ impl AudioConverter for FfmpegConverter {
         let (reply, result) = oneshot::channel();
         let cancel = cancel.clone();
         let job = Box::new(move || {
-            let outcome = catch_unwind(AssertUnwindSafe(|| remux(&request, &cancel, &*progress)))
-                .unwrap_or_else(|_| Err(panic_error()));
-            if outcome.is_err() {
-                let _ = std::fs::remove_file(&request.output);
-            }
-            let _ = reply.send(outcome);
+            let _ = reply.send(convert_staged(&request, &cancel, &*progress));
         });
         let stopped = || ExporterError::Unexpected("The conversion thread stopped.".into());
         self.jobs.send(job).map_err(|_| stopped())?;
         result.await.map_err(|_| stopped())?
     }
+}
+
+/// Dropping the staged path on any error deletes the partial file.
+fn convert_staged(
+    request: &ConversionRequest,
+    cancel: &CancellationToken,
+    progress: &(dyn Fn(f64) + Send + Sync),
+) -> Result<(), ExporterError> {
+    let staged = stage(&request.output)?;
+    catch_unwind(AssertUnwindSafe(|| {
+        remux(request, &staged, cancel, progress)
+    }))
+    .unwrap_or_else(|_| Err(panic_error()))?;
+    staged.persist(&request.output).map_err(|failure| {
+        ExporterError::FileSystem(format!(
+            "Could not move the file into place: {}",
+            failure.error
+        ))
+    })
+}
+
+/// An empty, hidden `.partial` file in the output's directory, so the final rename is atomic.
+fn stage(output: &Path) -> Result<TempPath, ExporterError> {
+    let directory = match output.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => Path::new("."),
+    };
+    let mut builder = tempfile::Builder::new();
+    builder.prefix(".").suffix(".partial");
+    // Like FFmpeg's own `open`, leave the mode to the umask instead of tempfile's 0600.
+    #[cfg(unix)]
+    builder.permissions(std::os::unix::fs::PermissionsExt::from_mode(0o666));
+    builder
+        .tempfile_in(directory)
+        .map(|file| file.into_temp_path())
+        .map_err(|error| {
+            ExporterError::FileSystem(format!("Could not create the output file: {error}"))
+        })
 }
 
 fn panic_error() -> ExporterError {
@@ -117,12 +154,13 @@ fn demuxer_options(decryption: &Decryption) -> Vec<(String, String)> {
 
 fn remux(
     request: &ConversionRequest,
+    output: &Path,
     cancel: &CancellationToken,
     progress: &(dyn Fn(f64) + Send + Sync),
 ) -> Result<(), ExporterError> {
     let mut strings = CStrings::default();
     let input = strings.add_path(&request.input);
-    let output = strings.add_path(&request.output);
+    let output = strings.add_path(output);
     let options = strings.tags(&demuxer_options(&request.decryption));
     let metadata = strings.tags(&metadata_tags(&request.metadata));
     let chapters: Vec<AexChapter> = request

@@ -127,7 +127,8 @@ pub struct ConversionRequest {
     pub metadata: BookMetadata,
 }
 
-/// Decrypts and remuxes a downloaded file into an M4B at `request.output`.
+/// Decrypts and remuxes a downloaded file into an M4B at `request.output`. Success replaces
+/// `request.output`; failure leaves it, and `request.input`, as they were.
 #[async_trait]
 pub trait AudioConverter: Send + Sync {
     async fn convert(
