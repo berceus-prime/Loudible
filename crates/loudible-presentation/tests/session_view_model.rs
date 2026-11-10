@@ -1,4 +1,4 @@
-//! Ported from `SessionViewModelTests.swift` and its storage extension.
+//! `SessionViewModel`, including credential storage.
 
 mod support;
 

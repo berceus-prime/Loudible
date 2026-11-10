@@ -129,7 +129,7 @@ pub fn book_tile_with_cover(
 ) -> f32 {
     let theme = ui.theme;
     if !can_select {
-        // A disabled SwiftUI button dims its whole label.
+        // A disabled button dims its whole label.
         ui.canvas.save_layer_alpha_f(None, 0.5);
     }
     let rect = Rect::from_xywh(x, y, width, width);

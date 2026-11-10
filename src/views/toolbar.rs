@@ -148,7 +148,7 @@ fn draw_trailing(ui: &mut Ui, props: &ToolbarProps, width: f32) -> f32 {
     const CIRCLE: f32 = 36.5;
     let theme = ui.theme;
     let right = width - TRAILING;
-    // An inactive window greys its toolbar labels, which is how the Swift previews appear.
+    // An inactive window greys its toolbar labels, as the previews show.
     let enabled_color = if ui.is_active {
         theme.label
     } else {

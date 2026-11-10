@@ -21,7 +21,7 @@ pub struct LoginProps<'a> {
     pub can_submit_pasted_url: bool,
     pub error: Option<&'a str>,
     pub shows_fallback: bool,
-    /// Labels the browser stand-in; the Swift gallery's browser-failure state leaves it blank.
+    /// Labels the browser stand-in; the browser-failure preview leaves it blank.
     pub shows_browser_label: bool,
     /// Offers the button that stands in for finishing Amazon's page. Off in previews.
     pub can_simulate: bool,

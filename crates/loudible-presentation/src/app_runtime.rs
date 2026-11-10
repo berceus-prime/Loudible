@@ -75,7 +75,7 @@ impl AppHandle {
 /// How often at most the window is told to redraw for model changes.
 const PUBLISH_INTERVAL: Duration = Duration::from_millis(16);
 
-/// Runs the models on their own thread, single-threaded like the Swift main actor. `wake` is
+/// Runs the models on their own thread, single-threaded. `wake` is
 /// called from that thread after each new snapshot, typically to post an event to the UI loop.
 pub fn start_app(
     dependencies: AppDependencies,

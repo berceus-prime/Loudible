@@ -1,6 +1,6 @@
-//! UI-independent view models, ported from `LoudiblePresentation`.
+//! UI-independent view models.
 //!
-//! The models replace `@MainActor @Observable`: they live on one thread, inside a
+//! The models live on one thread, inside a
 //! [`tokio::task::LocalSet`], and report changes through [`Changes`]. The UI thread never touches
 //! them; `app_runtime` runs them on their own thread and publishes immutable [`AppSnapshot`]s.
 

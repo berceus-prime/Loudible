@@ -1,4 +1,4 @@
-//! Ported from `LibraryViewModelTests.swift`.
+//! `LibraryViewModel`.
 
 mod support;
 

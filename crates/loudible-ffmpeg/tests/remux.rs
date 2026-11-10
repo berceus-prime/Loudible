@@ -1,5 +1,5 @@
 //! Runs real FFmpeg over a hand-built, unencrypted M4A. Real AAX/AAXC decryption stays untested,
-//! as in the Swift app, because no synthetic encrypted file exists.
+//! because no synthetic encrypted file exists.
 
 use std::path::PathBuf;
 use std::sync::Arc;

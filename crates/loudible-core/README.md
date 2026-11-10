@@ -1,6 +1,6 @@
 # loudible-core
 
-The application core, ported from the Swift app's `LoudibleCore` target: domain models, the
+The application core: domain models, the
 sign-in lifecycle, library rules, the kept downloads and the download/export queue. It does no
 HTTP, no keychain and no FFmpeg. Those sit behind the traits in `dependencies.rs`.
 
@@ -157,7 +157,7 @@ this crate; persisting it is `CredentialStore`'s job.
 **Conversion failures.** A failed conversion of a kept download adds "delete the download and
 download it again" to the message. The partial output is always removed; the download is kept.
 
-**Text.** `text.rs` reproduces Swift/Foundation behaviour: grapheme clusters as characters,
+**Text.** `text.rs` holds the text rules: grapheme clusters as characters,
 case- and diacritic-insensitive matching, and `localizedStandardCompare` ordering
 (`standard_compare`).
 
@@ -181,7 +181,7 @@ case- and diacritic-insensitive matching, and `localizedStandardCompare` orderin
 | `book_status` | `BookStatus`, `BookAction`, `book_menu_items`. |
 | `audiobook`, `marketplace`, `audible_session`, `pending_login`, `content_license`, `download_manifest` | Domain models. |
 | `exporter_error` | `ExporterError`. |
-| `text` | Swift-compatible text rules. |
+| `text` | Text rules. |
 | `codec`, `hex_encoding` | Base64 fields in JSON, lowercase hex. |
 
 ## Tests

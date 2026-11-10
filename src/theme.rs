@@ -1,4 +1,4 @@
-//! macOS semantic colours, measured from the Swift app's preview PNGs.
+//! macOS semantic colours.
 
 use skia_safe::Color;
 

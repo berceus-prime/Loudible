@@ -1,4 +1,4 @@
-//! Ported from `AuthenticationAdapterTests.swift` and `DeviceProfileTests.swift`.
+//! The authentication adapter and device profiles.
 
 mod support;
 

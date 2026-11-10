@@ -1,4 +1,4 @@
-//! Ported from `ErrorToastTests.swift`. Its web-view case belongs to the shell.
+//! Error toasts. The web-view case belongs to the shell.
 
 use loudible_core::JobKind;
 use loudible_presentation::*;

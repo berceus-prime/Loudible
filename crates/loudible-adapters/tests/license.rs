@@ -1,4 +1,4 @@
-//! Ported from `LicenseAndDownloadTests.swift` and `LicenseDenialTests.swift`.
+//! Licenses, downloads and license denials.
 
 mod support;
 

@@ -1,5 +1,4 @@
-//! Every screen state, with the same ids and sizes as the Swift app's preview galleries, so the
-//! renders can be compared one to one. Used by the gallery and the headless renderer.
+//! Every screen state, with fixed ids and sizes. Used by the gallery and the headless renderer.
 
 use skia_safe::{Rect, Size};
 
@@ -25,7 +24,7 @@ pub type DrawPreview = Box<dyn Fn(&mut Ui, Size)>;
 
 pub struct Preview {
     pub id: &'static str,
-    /// The Swift source file the state comes from, e.g. "BookTile".
+    /// The view the state belongs to, e.g. "BookTile".
     pub gallery: &'static str,
     pub title: &'static str,
     pub width: f32,
@@ -727,7 +726,7 @@ fn window_views() -> Vec<Preview> {
     ]
 }
 
-/// Every preview, grouped by the Swift file its states come from.
+/// Every preview, grouped by view.
 pub fn all() -> Vec<Preview> {
     [
         account_views(),

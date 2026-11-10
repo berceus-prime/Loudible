@@ -7,7 +7,7 @@ pub use super::platform::Platform;
 /// A book's identity, cheap to copy into every hit area.
 pub type Asin = std::sync::Arc<str>;
 
-/// A cover drawn as a solid colour with a light stripe, like the synthetic Swift previews.
+/// A cover drawn as a solid colour with a light stripe, for synthetic previews.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CoverColor(pub u32);
 
@@ -273,8 +273,7 @@ impl BookTileState {
     }
 }
 
-/// Which menu items a book with `status` offers. Mirrors `BookMenu.items` in the Swift app,
-/// reduced to the facts the mock app tracks.
+/// Which menu items a book with `status` offers, from the facts the mock app tracks.
 pub fn menu_items(status: &BookStatus, is_in_library: bool) -> Vec<BookMenuItem> {
     use BookAction::*;
     let item = BookMenuItem::new;

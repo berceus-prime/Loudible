@@ -1,4 +1,4 @@
-//! Audible HTTP API, request signing, credentials and downloads, ported from `LoudibleAdapters`.
+//! Audible HTTP API, request signing, credentials and downloads.
 
 pub mod audible_http_api;
 pub mod audible_login_factory;

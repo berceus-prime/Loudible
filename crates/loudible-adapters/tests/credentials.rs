@@ -1,4 +1,4 @@
-//! Replaces `KeychainCredentialStoreTests`. An in-memory secret store keeps these off the real
+//! The credential store. An in-memory secret store keeps these off the real
 //! Keychain.
 
 use std::sync::Arc;

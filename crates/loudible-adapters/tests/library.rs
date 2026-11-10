@@ -1,4 +1,4 @@
-//! Ported from `LibraryAdapterTests.swift`.
+//! The library adapter.
 
 mod support;
 

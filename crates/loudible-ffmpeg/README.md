@@ -1,7 +1,6 @@
 # loudible-ffmpeg
 
-Decrypts Audible downloads and remuxes them into M4B through FFmpeg's C API. Ported from the
-Swift app's `LoudibleFFmpeg` target.
+Decrypts Audible downloads and remuxes them into M4B through FFmpeg's C API.
 
 It implements `loudible-core`'s `AudioConverter` trait with `FfmpegConverter`. It sits beside
 `loudible-adapters`, above `loudible-core` and below `loudible-presentation`. The root crate picks
@@ -109,5 +108,5 @@ The tests require FFmpeg; the build fails if it is missing.
 | `src/bridge.rs` | The linked FFmpeg is LGPL, libavformat 61.x, and has every required component. |
 | `tests/remux.rs` | Real FFmpeg over a hand-built, unencrypted AAC M4A: audio copied unchanged, `moov` before `mdat`, chapters, metadata, cover art, AAX options, blank and empty chapters, NUL truncation, non-ASCII paths, missing or non-audio input, cancelling before and during, a panicking callback, and serial execution on one thread. |
 
-Real AAX/AAXC decryption is not tested, as in the Swift app: no synthetic encrypted file exists.
+Real AAX/AAXC decryption is not tested: no synthetic encrypted file exists.
 The demuxer accepts the key options on the unencrypted file, so only option passing is checked.

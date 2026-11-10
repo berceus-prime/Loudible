@@ -1,6 +1,6 @@
 # loudible-presentation
 
-The view models of Loudible, ported from the Swift target `LoudiblePresentation`. They hold what
+The view models of Loudible. They hold what
 the window shows and turn user actions into work for `loudible-core`. Nothing here draws.
 
 Layering: `loudible-scheduling` → `loudible-core` → `loudible-adapters` / `loudible-ffmpeg` →
@@ -15,8 +15,7 @@ cargo test -p loudible-presentation
 
 ## Threading
 
-The Swift models are `@MainActor @Observable`. Here they are `Rc` and `RefCell`, not `Send`, and
-live on one thread of their own.
+The models are `Rc` and `RefCell`, not `Send`, and live on one thread of their own.
 
 * `start_app` spawns the thread `Loudible.Models`, with a current-thread Tokio runtime and a
   `LocalSet`. All models are built and run there. The UI thread never touches them.
@@ -115,7 +114,7 @@ let snapshot = handle.snapshot(); // Arc<AppSnapshot>, cheap to clone
 | `src/lib.rs` | Module list and re-exports. |
 | `src/app_runtime.rs` | `AppDependencies`, `Command`, `AppHandle`, `start_app`, the publisher loop. |
 | `src/app_snapshot.rs` | `AppSnapshot` with `SessionSnapshot`, `LibrarySnapshot`, `ExportSnapshot`. |
-| `src/changes.rs` | `Changes`, the replacement for `@Observable`. |
+| `src/changes.rs` | `Changes`, the change signal the models raise. |
 | `src/app_view_model.rs` | `AppViewModel`, `DiskState`, menu facts. |
 | `src/session_view_model.rs` | `SessionViewModel`. |
 | `src/library_view_model.rs` | `LibraryViewModel`, `LoadState`, `MarketplaceCount`. |

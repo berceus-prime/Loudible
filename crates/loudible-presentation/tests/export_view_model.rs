@@ -1,4 +1,4 @@
-//! Ported from `ExportViewModelTests.swift` and its extensions.
+//! `ExportViewModel`.
 
 mod support;
 

@@ -1,4 +1,4 @@
-//! Text rules that match what the Swift app got from `String` and Foundation.
+//! Text rules: characters, matching and ordering of user-visible strings.
 
 use std::cmp::Ordering;
 
@@ -7,7 +7,7 @@ use unicode_normalization::char::{decompose_canonical, is_combining_mark};
 use unicode_properties::{GeneralCategory, UnicodeGeneralCategory};
 use unicode_segmentation::UnicodeSegmentation;
 
-/// The grapheme clusters of `text`, which is what a Swift `Character` is.
+/// The grapheme clusters of `text`, the characters a user sees.
 pub fn characters(text: &str) -> impl Iterator<Item = &str> {
     text.graphemes(true)
 }

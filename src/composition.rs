@@ -18,7 +18,7 @@ use loudible_presentation::{AppDependencies, start_app};
 use crate::model::LiveApp;
 use crate::shell::{app_view::AppView, covers::CoverStore, window::Wake};
 
-/// Apart from the Swift app's `local.loudible.Loudible` folder, whose records have another format.
+/// Not `local.loudible.Loudible`, whose records have another format.
 const SUPPORT_FOLDER: &str = "Loudible";
 
 /// Downloads and exports stay where users can see them.

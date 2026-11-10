@@ -132,8 +132,8 @@ fn attributes(size: (f64, f64), title: &str) -> winit::window::WindowAttributes 
     #[cfg(target_os = "macos")]
     let attributes = {
         use winit::platform::macos::WindowAttributesExtMacOS as _;
-        // The content runs under the title bar and draws its own controls where the Swift
-        // app's toolbar puts them, which AppKit's standard buttons cannot reach.
+        // The content runs under the title bar and draws its own controls in the toolbar,
+        // which AppKit's standard buttons cannot reach.
         attributes
             .with_titlebar_transparent(true)
             .with_title_hidden(true)

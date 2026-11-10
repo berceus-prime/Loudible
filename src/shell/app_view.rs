@@ -52,7 +52,7 @@ pub struct AppView<M = MockApp> {
     content_height: f32,
     viewport_height: f32,
     scroller_ms: f32,
-    /// False in previews, which must match the Swift galleries.
+    /// False in previews, which must stay fixed.
     can_simulate: bool,
     /// A real page for the sheet's browser, in place of the stand-in.
     browser_page: Option<BrowserPage>,
@@ -435,7 +435,7 @@ impl<M: AppModel> Screen for AppView<M> {
         self.draw_toast(ui, size);
         self.draw_login(ui, size);
         if self.app.pending_login().is_some() {
-            // Toasts also present above the sign-in sheet, as in the Swift app.
+            // Toasts also present above the sign-in sheet.
             self.draw_toast(ui, size);
         }
         if let Some(title) = self.pending_delete_info() {

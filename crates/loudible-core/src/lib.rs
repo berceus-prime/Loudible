@@ -1,4 +1,4 @@
-//! Models, auth lifecycle, library rules and the export queue, ported from `LoudibleCore`.
+//! Models, auth lifecycle, library rules and the export queue.
 
 pub mod audible_session;
 pub mod audiobook;

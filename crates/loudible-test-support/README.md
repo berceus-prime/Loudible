@@ -1,7 +1,6 @@
 # loudible-test-support
 
-Test doubles and fixtures shared by the Rust tests, ported from the Swift app's
-`Tests/TestSupport`. It is only ever a dev-dependency; no shipped crate depends on it.
+Test doubles and fixtures shared by the Rust tests. It is only ever a dev-dependency; no shipped crate depends on it.
 
 All data is synthetic. Sessions, tokens, keys, cookies and URLs are made up, and nothing here
 belongs to a real account.
@@ -47,7 +46,7 @@ and session.
 | Item | Purpose |
 | --- | --- |
 | `wait_until(condition)` | Polls every 2 ms until `condition` holds. Panics after five seconds, naming the caller. |
-| `check(&cancel)` | `Err(ExporterError::Cancelled)` once the token is cancelled, like Swift's `Task.checkCancellation()`. |
+| `check(&cancel)` | `Err(ExporterError::Cancelled)` once the token is cancelled. |
 | `write(path, contents)` | Writes a file, mapping errors to `ExporterError::FileSystem`. |
 | `contents_of(directory)` | Sorted names in a directory, hidden files included; empty if it doesn't exist. |
 

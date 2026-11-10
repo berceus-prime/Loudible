@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use tokio::sync::Notify;
 
-/// What `@Observable` gave the Swift models. A signal holds until awaited, so a change made while
+/// Tells waiters that a model changed. A signal holds until awaited, so a change made while
 /// nobody is waiting is not lost, and several changes collapse into one wake-up.
 #[derive(Clone, Default)]
 pub struct Changes(Rc<Signals>);

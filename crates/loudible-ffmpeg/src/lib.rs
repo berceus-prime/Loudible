@@ -1,4 +1,4 @@
-//! Decryption and remuxing through FFmpeg's C API, ported from `LoudibleFFmpeg`.
+//! Decryption and remuxing through FFmpeg's C API.
 
 mod bridge;
 mod ffmpeg_converter;

@@ -1,5 +1,5 @@
-//! Doubles and helpers shared by the Rust tests, ported from `Tests/TestSupport`. All data is
-//! synthetic: nothing here belongs to a real account.
+//! Doubles and helpers shared by the Rust tests. All data is synthetic: nothing here belongs to
+//! a real account.
 
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -265,7 +265,7 @@ impl AudibleApi for MockAudibleApi {
     }
 }
 
-/// `Task.checkCancellation()` for handlers.
+/// Fails with `Cancelled` once `cancel` is cancelled, for handlers.
 pub fn check(cancel: &CancellationToken) -> Result<(), ExporterError> {
     if cancel.is_cancelled() {
         Err(ExporterError::Cancelled)

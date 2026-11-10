@@ -1,8 +1,7 @@
 # loudible-adapters
 
 The real implementations of the ports `loudible-core` defines: the Audible HTTP API, request
-signing, sign-in, saved credentials and file downloads. Ported from the Swift `LoudibleAdapters`
-target.
+signing, sign-in, saved credentials and file downloads.
 
 It depends only on `loudible-core`. The root crate's `src/composition.rs` picks these adapters;
 tests and `--mock` use doubles instead.

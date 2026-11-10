@@ -17,12 +17,9 @@ cargo run --bin webview_check      # the real sign-in browser against a loopback
 cargo run --bin webview_check -- --amazon   # Amazon's real page, by hand; never exchanges the code
 ```
 
-The port of the Swift app is growing here. The workspace's crates mirror the SwiftPM targets, so
-Cargo enforces the same layering. `MockApp` stays for the previews and `--mock`.
-
-Ported so far: `loudible-core`, `loudible-adapters`, `loudible-ffmpeg` and
-`loudible-presentation`, with their tests. Shared test doubles are
-in `loudible-test-support`.
+The engine is split into workspace crates so Cargo enforces the layering: `loudible-core`,
+`loudible-adapters`, `loudible-ffmpeg` and `loudible-presentation`, each with its tests. Shared
+test doubles are in `loudible-test-support`. `MockApp` stays for the previews and `--mock`.
 
 FFmpeg and packaging, from this directory:
 
@@ -46,7 +43,7 @@ Without `Vendor/ffmpeg` (or `LOUDIBLE_FFMPEG_DIR`), the build fails with setup i
 | `src/model/` | Types the views draw, the `AppModel` trait behind the window, `LiveApp` over the real engine, and `MockApp` with synthetic data, where time only moves through `tick`. |
 | `src/ui.rs` | Immediate-mode drawing: shapes, materials, buttons, and hit areas naming an `Action`. |
 | `src/text.rs` | Skia paragraph layout, AppKit-style wrapping, truncation and San Francisco's tracking. |
-| `src/icons.rs` | Vector versions of the SF Symbols the Swift app uses. |
+| `src/icons.rs` | Vector versions of the SF Symbols the window uses. |
 | `src/stage.rs` | Hover, press, tooltips and input routing, independent of any window. |
 | `src/views/` | Content views: values in, painting and hit areas out. They never touch a model. |
 | `src/shell/` | `AppView` maps an `AppModel` onto the views; `covers.rs` fetches and caches cover images; `GalleryView` lists the previews; `window.rs` hosts a screen with winit and softbuffer; `webview.rs` lays the native sign-in browser over it. |
@@ -58,8 +55,8 @@ Without `Vendor/ffmpeg` (or `LOUDIBLE_FFMPEG_DIR`), the build fails with setup i
 ## Notes
 
 * Rendering is on the CPU; a window redraws only when something changes or animates.
-* The window draws its own traffic lights, because AppKit's standard buttons can't sit where the
-  Swift app's toolbar puts them. Previews show them grey, like the Swift PNGs of an inactive window.
+* The window draws its own traffic lights, because AppKit's standard buttons can't sit in the
+  toolbar. Previews show them grey, as in an inactive window.
 * The sign-in browser is a native view above Skia, so it hides while a toast or spinner must show
   there. macOS and Windows embed it; Linux has only the browser-and-paste fallback for now, shown open from the start.
 * Only the system font is used on macOS. Other platforms fall back to a common sans-serif and have

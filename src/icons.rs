@@ -1,4 +1,4 @@
-//! Vector versions of the SF Symbols the Swift app uses, drawn on a 24-unit grid.
+//! Vector versions of the SF Symbols the window uses, drawn on a 24-unit grid.
 
 use skia_safe::{
     BlendMode, Canvas, Color, Paint, PathBuilder, Point, RRect, Rect,

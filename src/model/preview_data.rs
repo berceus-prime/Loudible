@@ -1,4 +1,4 @@
-//! Synthetic books, accounts and errors, ported from the Swift app's `PreviewData.swift`.
+//! Synthetic books, accounts and errors for the previews.
 //! Nothing here refers to a real account or title.
 
 use super::app_error::{AppError, CredentialOperation};
