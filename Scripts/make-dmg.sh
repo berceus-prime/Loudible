@@ -30,6 +30,11 @@ if [ -z "${NOTARY_APPLE_ID:-}" ] || [ -z "${NOTARY_PASSWORD:-}" ] || [ -z "${NOT
     echo "Built $DMG (signed, not notarized)"
     exit 0
 fi
+# Apple rejects every other kind, such as Apple Development, only after the upload.
+if ! codesign -dvv "$APP" 2>&1 | grep -q "^Authority=Developer ID Application:"; then
+    echo "error: $APP is not signed with a Developer ID Application certificate" >&2
+    exit 1
+fi
 echo "Notarizing (usually a few minutes)…"
 CREDENTIALS=(--apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$NOTARY_TEAM_ID")
 # notarytool exits 0 for a rejected submission too, so read its verdict.
