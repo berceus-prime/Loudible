@@ -1,0 +1,207 @@
+{
+  "$render": {
+    "size": [
+      920,
+      420
+    ],
+    "scale": 2
+  },
+  "progress": 0.42,
+  "played_width": 211.7,
+  "elapsed": "4:12",
+  "remaining": "\u22129:48",
+  "wave": [
+    {
+      "h": 8,
+      "played": true
+    },
+    {
+      "h": 14,
+      "played": true
+    },
+    {
+      "h": 22,
+      "played": true
+    },
+    {
+      "h": 17,
+      "played": true
+    },
+    {
+      "h": 31,
+      "played": true
+    },
+    {
+      "h": 44,
+      "played": true
+    },
+    {
+      "h": 28,
+      "played": true
+    },
+    {
+      "h": 52,
+      "played": true
+    },
+    {
+      "h": 39,
+      "played": true
+    },
+    {
+      "h": 61,
+      "played": true
+    },
+    {
+      "h": 48,
+      "played": true
+    },
+    {
+      "h": 70,
+      "played": true
+    },
+    {
+      "h": 55,
+      "played": true
+    },
+    {
+      "h": 42,
+      "played": true
+    },
+    {
+      "h": 33,
+      "played": true
+    },
+    {
+      "h": 47,
+      "played": true
+    },
+    {
+      "h": 62,
+      "played": true
+    },
+    {
+      "h": 74,
+      "played": true
+    },
+    {
+      "h": 58,
+      "played": true
+    },
+    {
+      "h": 40,
+      "played": true
+    },
+    {
+      "h": 29,
+      "played": false
+    },
+    {
+      "h": 36,
+      "played": false
+    },
+    {
+      "h": 51,
+      "played": false
+    },
+    {
+      "h": 66,
+      "played": false
+    },
+    {
+      "h": 80,
+      "played": false
+    },
+    {
+      "h": 63,
+      "played": false
+    },
+    {
+      "h": 45,
+      "played": false
+    },
+    {
+      "h": 34,
+      "played": false
+    },
+    {
+      "h": 26,
+      "played": false
+    },
+    {
+      "h": 38,
+      "played": false
+    },
+    {
+      "h": 49,
+      "played": false
+    },
+    {
+      "h": 57,
+      "played": false
+    },
+    {
+      "h": 44,
+      "played": false
+    },
+    {
+      "h": 31,
+      "played": false
+    },
+    {
+      "h": 23,
+      "played": false
+    },
+    {
+      "h": 15,
+      "played": false
+    },
+    {
+      "h": 27,
+      "played": false
+    },
+    {
+      "h": 41,
+      "played": false
+    },
+    {
+      "h": 53,
+      "played": false
+    },
+    {
+      "h": 67,
+      "played": false
+    },
+    {
+      "h": 59,
+      "played": false
+    },
+    {
+      "h": 46,
+      "played": false
+    },
+    {
+      "h": 35,
+      "played": false
+    },
+    {
+      "h": 24,
+      "played": false
+    },
+    {
+      "h": 18,
+      "played": false
+    },
+    {
+      "h": 12,
+      "played": false
+    },
+    {
+      "h": 20,
+      "played": false
+    },
+    {
+      "h": 30,
+      "played": false
+    }
+  ]
+}

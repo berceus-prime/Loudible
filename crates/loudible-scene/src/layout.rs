@@ -154,7 +154,7 @@ impl<'a> Layout<'a> {
             } else {
                 margin.vertical()
             };
-            let dim = self.dim(child, horizontal);
+            let dim = self.main_dim(child, horizontal);
             match dim {
                 Dim::Fill { .. } => {
                     let grow = if child.style.grow > 0.0 {
@@ -170,7 +170,7 @@ impl<'a> Layout<'a> {
                         if horizontal { main_space } else { cross_space },
                         if horizontal { cross_space } else { main_space },
                     );
-                    let size = self.size_of(child, available);
+                    let size = self.main_size(child, available, horizontal);
                     let main = if horizontal { size.width } else { size.height };
                     fixed_total += main + extra;
                     mains.push(Some(main));
@@ -218,8 +218,7 @@ impl<'a> Layout<'a> {
             let main = match mains[index] {
                 Some(main) => main,
                 None => {
-                    let clamped = self.dim(child, horizontal);
-                    match clamped {
+                    match self.main_dim(child, horizontal) {
                         Dim::Fill { min, max } => clamp(share * grow, min, max),
                         _ => share * grow,
                     }
@@ -288,7 +287,7 @@ impl<'a> Layout<'a> {
         let mut leading_width = 0.0_f32;
         let mut trailing_width = 0.0_f32;
         for child in children {
-            let size = self.size_of(child, available);
+            let size = self.main_size(child, available, true);
             match child.style.slot {
                 Some(Slot::Leading) => leading_width = leading_width.max(size.width),
                 Some(Slot::Trailing) => trailing_width = trailing_width.max(size.width),
@@ -297,13 +296,12 @@ impl<'a> Layout<'a> {
         }
         let mut out = vec![];
         for child in children {
-            let dim = self.dim(child, true);
-            let wanted = match dim {
+            let wanted = match self.main_dim(child, true) {
                 Dim::Fill { min, max } => {
                     let room = inner.width() - leading_width - trailing_width - style.gap * 2.0;
                     clamp(room.max(0.0), min, max)
                 }
-                _ => self.size_of(child, available).width,
+                _ => self.main_size(child, available, true).width,
             };
             let left = match child.style.slot {
                 Some(Slot::Leading) | None => inner.left,
@@ -337,7 +335,7 @@ impl<'a> Layout<'a> {
         let height = match self.dim(child, false) {
             Dim::Fill { min, max } => clamp(inner.height(), min, max),
             _ if align.is_stretch() => inner.height(),
-            _ => self.size_of(child, available).height,
+            _ => self.main_size(child, available, false).height,
         };
         let top = inner.top + (inner.height() - height).max(0.0) * align.fraction();
         (top, height)
@@ -358,10 +356,10 @@ impl<'a> Layout<'a> {
             for (column, child) in row.iter().enumerate() {
                 let x = inner.left + column as f32 * (cell + gap);
                 let available = Size::new(cell, inner.height());
-                let height = match self.dim(child, false) {
+                let height = match self.main_dim(child, false) {
                     Dim::Fixed(value) => value,
                     Dim::Ratio(ratio) => cell * ratio,
-                    _ => self.size_of(child, available).height,
+                    _ => self.main_size(child, available, false).height,
                 };
                 let slot = Rect::from_xywh(x, y, cell, height);
                 out.push(self.place_node(child, slot, slot));
@@ -395,6 +393,18 @@ impl<'a> Layout<'a> {
 
     // MARK: Measuring
 
+    /// A child's size along the axis its parent arranges it on. Saying nothing means hugging:
+    /// a row of controls is as wide as the controls, not as wide as the row. The cross axis
+    /// still falls back to filling, so those controls stretch to the row's height.
+    fn main_dim(&self, node: &Resolved, horizontal: bool) -> Dim {
+        let declared = if horizontal {
+            node.style.width
+        } else {
+            node.style.height
+        };
+        declared.unwrap_or(Dim::Hug)
+    }
+
     /// This node's dimension on one axis, falling back to what its type does by default.
     fn dim(&self, node: &Resolved, horizontal: bool) -> Dim {
         let own = if horizontal {
@@ -407,30 +417,36 @@ impl<'a> Layout<'a> {
 
     /// How large this node wants to be, given the room it has.
     pub fn size_of(&self, node: &Resolved, available: Size) -> Size {
-        self.sized(node, available, false)
+        self.sized(node, available, false, false)
     }
 
     /// Measuring for a hugging parent: a child that would fill is asked what it needs instead,
     /// or every hug would come out the size of the window.
     fn hug_size(&self, node: &Resolved, available: Size) -> Size {
-        self.sized(node, available, true)
+        self.sized(node, available, true, true)
     }
 
-    fn sized(&self, node: &Resolved, available: Size, hugging: bool) -> Size {
-        let resolve = |dim: Dim| {
-            if hugging && matches!(dim, Dim::Fill { .. }) {
+    /// Measuring a child of a stack, bar or grid: it hugs along the axis it is arranged on and
+    /// still fills across it, so a row of buttons keeps their widths and their height.
+    fn main_size(&self, node: &Resolved, available: Size, horizontal: bool) -> Size {
+        self.sized(node, available, horizontal, !horizontal)
+    }
+
+    fn sized(&self, node: &Resolved, available: Size, hug_width: bool, hug_height: bool) -> Size {
+        let resolve = |dim: Dim, hug: bool| {
+            if hug && matches!(dim, Dim::Fill { .. }) {
                 Dim::Hug
             } else {
                 dim
             }
         };
-        let own_width = resolve(self.dim(node, true));
-        let own_height = resolve(self.dim(node, false));
+        let own_width = resolve(self.dim(node, true), hug_width);
+        let own_height = resolve(self.dim(node, false), hug_height);
         let width = match own_width {
             Dim::Fixed(value) => value,
             Dim::Fraction(fraction) => available.width * fraction,
             Dim::Fill { min, max } => clamp(available.width, min, max),
-            Dim::Hug => self.content_size(node, available, hugging).width,
+            Dim::Hug => self.content_size(node, available).width,
             Dim::Ratio(_) => 0.0,
         };
         let height = match own_height {
@@ -438,7 +454,7 @@ impl<'a> Layout<'a> {
             Dim::Fraction(fraction) => available.height * fraction,
             Dim::Fill { min, max } => clamp(available.height, min, max),
             Dim::Hug => {
-                self.content_size(node, Size::new(width, available.height), hugging)
+                self.content_size(node, Size::new(width, available.height))
                     .height
             }
             Dim::Ratio(ratio) => width * ratio,
@@ -452,7 +468,7 @@ impl<'a> Layout<'a> {
     }
 
     /// What the content alone needs, before padding.
-    fn content_size(&self, node: &Resolved, available: Size, _hugging: bool) -> Size {
+    fn content_size(&self, node: &Resolved, available: Size) -> Size {
         let padding = node.style.padding;
         let room = Size::new(
             (available.width - padding.horizontal()).max(0.0),
@@ -498,7 +514,7 @@ impl<'a> Layout<'a> {
                 let mut taken = gaps;
                 if horizontal {
                     for child in children {
-                        if !matches!(self.dim(child, true), Dim::Fill { .. }) {
+                        if !matches!(self.main_dim(child, true), Dim::Fill { .. }) {
                             taken += self.hug_size(child, room).width
                                 + child.style.margin.horizontal();
                         }
@@ -506,7 +522,7 @@ impl<'a> Layout<'a> {
                 }
                 let flexible = children
                     .iter()
-                    .filter(|child| matches!(self.dim(child, true), Dim::Fill { .. }))
+                    .filter(|child| matches!(self.main_dim(child, true), Dim::Fill { .. }))
                     .count()
                     .max(1) as f32;
                 let share = ((room.width - taken) / flexible).max(0.0);
@@ -514,7 +530,8 @@ impl<'a> Layout<'a> {
                 let mut main = gaps;
                 let mut cross = 0.0_f32;
                 for child in children {
-                    let fills = horizontal && matches!(self.dim(child, true), Dim::Fill { .. });
+                    let fills =
+                        horizontal && matches!(self.main_dim(child, true), Dim::Fill { .. });
                     let room = if fills {
                         Size::new(share, room.height)
                     } else {

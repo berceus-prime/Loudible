@@ -190,6 +190,30 @@ fn a_host_reserves_its_rect() {
 }
 
 #[test]
+fn every_demo_renders() {
+    let demos = loudible_scene::testing::scenes_dir().join("demo");
+    let mut seen = 0;
+    for entry in std::fs::read_dir(&demos).expect("the demo folder") {
+        let path = entry.expect("an entry").path();
+        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or("");
+        if !name.ends_with(".json") || name.ends_with(".data.json") {
+            continue;
+        }
+        let stem = name.trim_end_matches(".json");
+        let root = loudible_scene::testing::read_scene(&format!("demo/{name}"));
+        let data = loudible_scene::testing::read_scene(&format!("demo/{stem}.data.json"));
+        let (frame, pixels) = render(root, &data, (600, 400));
+        assert!(
+            pixels.iter().any(|channel| *channel != 255),
+            "{name} drew nothing"
+        );
+        let _ = frame;
+        seen += 1;
+    }
+    assert!(seen >= 6, "found only {seen} demos");
+}
+
+#[test]
 fn the_authored_views_render() {
     for (file, size) in [("toolbar.json", (1100, 52)), ("error-toast.json", (480, 260))] {
         let data = loudible_scene::testing::read_scene(&file.replace(".json", ".data.json"));

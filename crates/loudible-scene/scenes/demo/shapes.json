@@ -1,0 +1,1684 @@
+{
+  "$comment": "The primitive zoo: every shape, corner rule, stroke alignment and fill the renderer knows.",
+  "type": "stack",
+  "props": {
+    "axis": "y",
+    "gap": 26,
+    "padding": 32,
+    "fill": "window",
+    "size": {
+      "width": "fill",
+      "height": "fill"
+    }
+  },
+  "children": [
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 4
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "Shapes",
+            "style": {
+              "style": "title3",
+              "weight": "bold"
+            },
+            "color": "label"
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "One box node covers every corner rule; the rest are ellipses, arcs, paths and lines.",
+            "style": "callout",
+            "color": "secondary"
+          }
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 12,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "CORNERS",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "tertiary"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 20,
+            "align": "start",
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "fill": "#FF3F51B5",
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "square",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "fill": "#FF3F51B5",
+                        "radius": 16,
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "radius 16",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "size": {
+                          "width": 72,
+                          "height": 44
+                        },
+                        "radius": "capsule",
+                        "fill": "#FF3F51B5",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "capsule",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "size": {
+                          "width": 72,
+                          "height": 36
+                        },
+                        "radius_rule": "control",
+                        "fill": "#FF3F51B5",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "control, 36",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "size": {
+                          "width": 72,
+                          "height": 20
+                        },
+                        "radius_rule": "control",
+                        "fill": "#FF3F51B5",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "control, 20",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "fill": "#FF3F51B5",
+                        "radius": {
+                          "tl": 26,
+                          "br": 26
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "per corner",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 12,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "CURVES",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "tertiary"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 20,
+            "align": "start",
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "props": {
+                        "size": 72,
+                        "fill": "#FF17A398",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "circle",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "props": {
+                        "size": {
+                          "width": 72,
+                          "height": 46
+                        },
+                        "fill": "#FF17A398",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "oval",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "arc",
+                      "props": {
+                        "size": 72,
+                        "sweep_deg": 360,
+                        "stroke": {
+                          "color": "#FF17A398",
+                          "width": 9
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "ring",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "arc",
+                      "props": {
+                        "size": 72,
+                        "start_deg": -90,
+                        "sweep_deg": 270,
+                        "stroke": {
+                          "color": "#FF17A398",
+                          "width": 9,
+                          "cap": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "arc, 270\u00b0",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "arc",
+                      "props": {
+                        "size": 72,
+                        "progress": 0.62,
+                        "track": {
+                          "color": "#FFCDEDEA",
+                          "width": 9
+                        },
+                        "stroke": {
+                          "color": "#FF17A398",
+                          "width": 9,
+                          "cap": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "over a track",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "arc",
+                      "props": {
+                        "size": 72,
+                        "start_deg": -120,
+                        "sweep_deg": 150,
+                        "stroke": {
+                          "color": "#FF17A398",
+                          "width": 26
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "wedge",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 12,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "PATHS",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "tertiary"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 20,
+            "align": "start",
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "props": {
+                        "size": 72,
+                        "grid": 24,
+                        "points": [
+                          [
+                            2,
+                            17
+                          ],
+                          [
+                            7,
+                            7
+                          ],
+                          [
+                            12,
+                            15
+                          ],
+                          [
+                            17,
+                            4
+                          ],
+                          [
+                            22,
+                            11
+                          ]
+                        ],
+                        "stroke": {
+                          "color": "#FFE4572E",
+                          "width": 2.4,
+                          "cap": "round",
+                          "join": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "polyline",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "props": {
+                        "size": 72,
+                        "grid": 24,
+                        "commands": [
+                          {
+                            "move": [
+                              12,
+                              2
+                            ]
+                          },
+                          {
+                            "line": [
+                              22,
+                              20
+                            ]
+                          },
+                          {
+                            "line": [
+                              2,
+                              20
+                            ]
+                          },
+                          {
+                            "close": true
+                          }
+                        ],
+                        "fill": "#FFF2A33C",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "closed, filled",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "props": {
+                        "size": 72,
+                        "grid": 24,
+                        "commands": [
+                          {
+                            "move": [
+                              12,
+                              2
+                            ]
+                          },
+                          {
+                            "line": [
+                              22,
+                              20
+                            ]
+                          },
+                          {
+                            "line": [
+                              2,
+                              20
+                            ]
+                          },
+                          {
+                            "close": true
+                          }
+                        ],
+                        "fill": "#FFF9DFBE",
+                        "stroke": {
+                          "color": "#FFE4572E",
+                          "width": 3,
+                          "join": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "filled + stroked",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "props": {
+                        "size": 72,
+                        "grid": 24,
+                        "commands": [
+                          {
+                            "move": [
+                              12,
+                              21
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                6,
+                                16
+                              ],
+                              [
+                                2,
+                                12.5
+                              ],
+                              [
+                                2,
+                                8.5
+                              ]
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                2,
+                                5.4
+                              ],
+                              [
+                                4.4,
+                                3
+                              ],
+                              [
+                                7.5,
+                                3
+                              ]
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                9.5,
+                                3
+                              ],
+                              [
+                                11.2,
+                                4.2
+                              ],
+                              [
+                                12,
+                                5.6
+                              ]
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                12.8,
+                                4.2
+                              ],
+                              [
+                                14.5,
+                                3
+                              ],
+                              [
+                                16.5,
+                                3
+                              ]
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                19.6,
+                                3
+                              ],
+                              [
+                                22,
+                                5.4
+                              ],
+                              [
+                                22,
+                                8.5
+                              ]
+                            ]
+                          },
+                          {
+                            "cubic": [
+                              [
+                                22,
+                                12.5
+                              ],
+                              [
+                                18,
+                                16
+                              ],
+                              [
+                                12,
+                                21
+                              ]
+                            ]
+                          },
+                          {
+                            "close": true
+                          }
+                        ],
+                        "fill": "#FFC2185B",
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "cubics",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "props": {
+                        "size": 72,
+                        "grid": 24,
+                        "commands": [
+                          {
+                            "move": [
+                              12.0,
+                              1.0
+                            ]
+                          },
+                          {
+                            "line": [
+                              14.7,
+                              8.28
+                            ]
+                          },
+                          {
+                            "line": [
+                              22.46,
+                              8.6
+                            ]
+                          },
+                          {
+                            "line": [
+                              16.37,
+                              13.42
+                            ]
+                          },
+                          {
+                            "line": [
+                              18.47,
+                              20.9
+                            ]
+                          },
+                          {
+                            "line": [
+                              12.0,
+                              16.6
+                            ]
+                          },
+                          {
+                            "line": [
+                              5.53,
+                              20.9
+                            ]
+                          },
+                          {
+                            "line": [
+                              7.63,
+                              13.42
+                            ]
+                          },
+                          {
+                            "line": [
+                              1.54,
+                              8.6
+                            ]
+                          },
+                          {
+                            "line": [
+                              9.3,
+                              8.28
+                            ]
+                          },
+                          {
+                            "close": true
+                          }
+                        ],
+                        "fill": "#FFD4B106",
+                        "stroke": {
+                          "color": "#FF8A7404",
+                          "width": 1.5,
+                          "join": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "star",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "line",
+                      "props": {
+                        "size": 72,
+                        "from": [
+                          8,
+                          60
+                        ],
+                        "to": [
+                          64,
+                          12
+                        ],
+                        "stroke": {
+                          "color": "#FFE4572E",
+                          "width": 10,
+                          "cap": "round"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "line, round cap",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 12,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "STROKES AND FILLS",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "tertiary"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 20,
+            "align": "start",
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": "#FFEDEFF9",
+                        "stroke": {
+                          "color": "#FF3F51B5",
+                          "width": 8,
+                          "align": "inside"
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "inside",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": "#FFEDEFF9",
+                        "stroke": {
+                          "color": "#FF3F51B5",
+                          "width": 8,
+                          "align": "center"
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "centre",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": "#FFEDEFF9",
+                        "stroke": {
+                          "color": "#FF3F51B5",
+                          "width": 8,
+                          "align": "outside"
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "outside",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": {
+                          "gradient": {
+                            "stops": [
+                              "#FF8E6BF2",
+                              "#FF17A398"
+                            ]
+                          }
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "gradient \u2193",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": {
+                          "gradient": {
+                            "from": "left",
+                            "to": "right",
+                            "stops": [
+                              "#FFE4572E",
+                              "#FFD4B106"
+                            ]
+                          }
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "gradient \u2192",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": {
+                          "mix": [
+                            "#FFE4572E",
+                            "#FFFFFFFF",
+                            0.5
+                          ]
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "mix, 50%",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "y",
+                "gap": 9,
+                "align": "center",
+                "size": {
+                  "width": "hug",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 80,
+                      "height": 76
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "box",
+                      "props": {
+                        "radius": 14,
+                        "fill": {
+                          "token": "accent",
+                          "opacity": 0.3
+                        },
+                        "size": 72,
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "props": {
+                    "value": "token at 30%",
+                    "style": "caption",
+                    "color": "secondary",
+                    "align": "center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

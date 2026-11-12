@@ -1,0 +1,1030 @@
+{
+  "$comment": "Shadows, materials, layer opacity and knockouts, over a background with something worth blurring.",
+  "type": "layer",
+  "props": {
+    "size": {
+      "width": "fill",
+      "height": "fill"
+    },
+    "fill": {
+      "gradient": {
+        "stops": [
+          "#FFEEF2FF",
+          "#FFDDF4F1"
+        ]
+      }
+    }
+  },
+  "children": [
+    {
+      "type": "ellipse",
+      "props": {
+        "place": {
+          "left": -60,
+          "top": -70
+        },
+        "size": 300,
+        "fill": {
+          "hex": "#FF8E6BF2",
+          "opacity": 0.35
+        }
+      }
+    },
+    {
+      "type": "ellipse",
+      "props": {
+        "place": {
+          "right": -40,
+          "top": 40
+        },
+        "size": 240,
+        "fill": {
+          "hex": "#FFF2A33C",
+          "opacity": 0.35
+        }
+      }
+    },
+    {
+      "type": "ellipse",
+      "props": {
+        "place": {
+          "right": -70,
+          "bottom": -140
+        },
+        "size": 260,
+        "fill": {
+          "hex": "#FF17A398",
+          "opacity": 0.3
+        }
+      }
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 26,
+        "padding": 32,
+        "place": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "size": {
+          "width": "fill",
+          "height": "fill"
+        }
+      },
+      "children": [
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "Effects",
+                "style": {
+                  "style": "title3",
+                  "weight": "bold"
+                },
+                "color": "label"
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": "Shadows are knocked out from under their own shape; a material blurs what is behind it.",
+                "style": "callout",
+                "color": "secondary"
+              }
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 12,
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "SHADOWS",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "tertiary"
+              }
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "x",
+                "gap": 22,
+                "align": "start",
+                "size": {
+                  "width": "fill",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 104,
+                              "height": 72
+                            },
+                            "radius": 14,
+                            "fill": "#FFFFFFFF",
+                            "shadow": null,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "none",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 104,
+                              "height": 72
+                            },
+                            "radius": 14,
+                            "fill": "#FFFFFFFF",
+                            "shadow": {
+                              "color": "#1F000000",
+                              "blur": 6,
+                              "dy": 2
+                            },
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "blur 6",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 104,
+                              "height": 72
+                            },
+                            "radius": 14,
+                            "fill": "#FFFFFFFF",
+                            "shadow": {
+                              "color": "#2E000000",
+                              "blur": 16,
+                              "dy": 6
+                            },
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "blur 16",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 104,
+                              "height": 72
+                            },
+                            "radius": 14,
+                            "fill": "#FFFFFFFF",
+                            "shadow": {
+                              "color": "#3D000000",
+                              "blur": 36,
+                              "dy": 14
+                            },
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "blur 36",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 104,
+                              "height": 72
+                            },
+                            "radius": 14,
+                            "fill": "#FFFFFFFF",
+                            "shadow": [
+                              {
+                                "color": "#14000000",
+                                "blur": 2,
+                                "dy": 1
+                              },
+                              {
+                                "color": "#33000000",
+                                "blur": 24,
+                                "dy": 10
+                              }
+                            ],
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "two at once",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 12,
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "MATERIAL AND OPACITY",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "tertiary"
+              }
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "x",
+                "gap": 22,
+                "align": "start",
+                "size": {
+                  "width": "fill",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 186,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "props": {
+                            "place": {
+                              "left": 10,
+                              "top": 6
+                            },
+                            "size": 48,
+                            "fill": "#FFE4572E"
+                          }
+                        },
+                        {
+                          "type": "ellipse",
+                          "props": {
+                            "place": {
+                              "center_x": -6,
+                              "center_y": 10
+                            },
+                            "size": 56,
+                            "fill": "#FFD4B106"
+                          }
+                        },
+                        {
+                          "type": "ellipse",
+                          "props": {
+                            "place": {
+                              "right": 12,
+                              "top": 14
+                            },
+                            "size": 52,
+                            "fill": "#FF3F51B5"
+                          }
+                        },
+                        {
+                          "type": "box",
+                          "props": {
+                            "place": {
+                              "left": 24,
+                              "top": 30
+                            },
+                            "size": {
+                              "width": 140,
+                              "height": 14
+                            },
+                            "radius": 7,
+                            "fill": "#FF17A398"
+                          }
+                        },
+                        {
+                          "type": "box",
+                          "props": {
+                            "size": {
+                              "width": 150,
+                              "height": 76
+                            },
+                            "radius": 16,
+                            "material": {
+                              "blur": 18,
+                              "tint": "material"
+                            },
+                            "stroke": {
+                              "color": "material_rim",
+                              "width": 1,
+                              "align": "inside"
+                            },
+                            "shadow": {
+                              "color": "#26000000",
+                              "blur": 18,
+                              "dy": 6
+                            },
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "material",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "layer",
+                          "props": {
+                            "size": {
+                              "width": 96,
+                              "height": 72
+                            },
+                            "opacity": 1.0,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "left": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFE4572E"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "center_x": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFD4B106"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "right": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FF17A398"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "opacity 1",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "layer",
+                          "props": {
+                            "size": {
+                              "width": 96,
+                              "height": 72
+                            },
+                            "opacity": 0.6,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "left": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFE4572E"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "center_x": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFD4B106"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "right": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FF17A398"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "opacity 0.6",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 120,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "layer",
+                          "props": {
+                            "size": {
+                              "width": 96,
+                              "height": 72
+                            },
+                            "opacity": 0.25,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "left": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFE4572E"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "center_x": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FFD4B106"
+                              }
+                            },
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "right": 0,
+                                  "center_y": 0
+                                },
+                                "size": 52,
+                                "fill": "#FF17A398"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "opacity 0.25",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 12,
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "KNOCKOUTS",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "tertiary"
+              }
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "x",
+                "gap": 34,
+                "align": "start",
+                "size": {
+                  "width": "fill",
+                  "height": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 176,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "place": {
+                              "left": 0,
+                              "right": 0,
+                              "top": 8,
+                              "bottom": 8
+                            },
+                            "radius": 14,
+                            "fill": "#FFF2A33C"
+                          }
+                        },
+                        {
+                          "type": "layer",
+                          "props": {
+                            "size": 72,
+                            "isolate": true,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "left": 0,
+                                  "top": 0
+                                },
+                                "size": 72,
+                                "fill": "#FF3F51B5"
+                              }
+                            },
+                            {
+                              "type": "box",
+                              "props": {
+                                "place": {
+                                  "center_x": 0,
+                                  "center_y": 0
+                                },
+                                "size": {
+                                  "width": 46,
+                                  "height": 20
+                                },
+                                "radius": 10,
+                                "fill": "#FF000000",
+                                "blend": "dst-out"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "isolated: cuts the disc only",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 10,
+                    "align": "center",
+                    "size": {
+                      "width": "hug",
+                      "height": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "layer",
+                      "props": {
+                        "size": {
+                          "width": 176,
+                          "height": 96
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "box",
+                          "props": {
+                            "place": {
+                              "left": 0,
+                              "right": 0,
+                              "top": 8,
+                              "bottom": 8
+                            },
+                            "radius": 14,
+                            "fill": "#FFF2A33C"
+                          }
+                        },
+                        {
+                          "type": "layer",
+                          "props": {
+                            "size": 72,
+                            "isolate": false,
+                            "place": {
+                              "center_x": 0,
+                              "center_y": 0
+                            }
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "props": {
+                                "place": {
+                                  "left": 0,
+                                  "top": 0
+                                },
+                                "size": 72,
+                                "fill": "#FF3F51B5"
+                              }
+                            },
+                            {
+                              "type": "box",
+                              "props": {
+                                "place": {
+                                  "center_x": 0,
+                                  "center_y": 0
+                                },
+                                "size": {
+                                  "width": 46,
+                                  "height": 20
+                                },
+                                "radius": 10,
+                                "fill": "#FF000000",
+                                "blend": "dst-out"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "props": {
+                        "value": "not isolated: cuts the patch too",
+                        "style": "caption",
+                        "color": "secondary",
+                        "align": "center"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,239 +1,678 @@
 {
   "$comment": "src/icons.rs on its own 24-unit grid. `$color` and `$size` come from the `symbol` node. Every stroke is round-capped and round-joined, as `icons::stroke` makes them.",
-
   "search": {
     "grid": 24,
     "children": [
       {
         "type": "ellipse",
         "props": {
-          "place": { "left": 3, "top": 3 },
+          "place": {
+            "left": 3,
+            "top": 3
+          },
           "size": 14,
-          "stroke": { "color": "$color", "width": 2.4, "cap": "round", "join": "round" }
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[15.3, 15.3], [21, 21]],
-          "stroke": { "color": "$color", "width": 2.9, "cap": "round", "join": "round" }
+          "points": [
+            [
+              15.3,
+              15.3
+            ],
+            [
+              21,
+              21
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 2.9,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "xmark": {
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 2.4, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 2.4,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
-      { "type": "path", "props": { "points": [[4.5, 4.5], [19.5, 19.5]] } },
-      { "type": "path", "props": { "points": [[19.5, 4.5], [4.5, 19.5]] } }
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              4.5,
+              4.5
+            ],
+            [
+              19.5,
+              19.5
+            ]
+          ]
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              19.5,
+              4.5
+            ],
+            [
+              4.5,
+              19.5
+            ]
+          ]
+        }
+      }
     ]
   },
-
   "check": {
     "grid": 24,
     "children": [
       {
         "type": "path",
         "props": {
-          "points": [[4, 13], [9.5, 19], [20, 5]],
-          "stroke": { "color": "$color", "width": 2.6, "cap": "round", "join": "round" }
+          "points": [
+            [
+              4,
+              13
+            ],
+            [
+              9.5,
+              19
+            ],
+            [
+              20,
+              5
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 2.6,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "chevron.right": {
     "grid": 24,
     "children": [
       {
         "type": "path",
         "props": {
-          "points": [[8, 3.5], [17, 12], [8, 20.5]],
-          "stroke": { "color": "$color", "width": 3, "cap": "round", "join": "round" }
+          "points": [
+            [
+              8,
+              3.5
+            ],
+            [
+              17,
+              12
+            ],
+            [
+              8,
+              20.5
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "chevron.down": {
     "grid": 24,
     "children": [
       {
         "type": "path",
         "props": {
-          "points": [[3.5, 8], [12, 17], [20.5, 8]],
-          "stroke": { "color": "$color", "width": 3, "cap": "round", "join": "round" }
+          "points": [
+            [
+              3.5,
+              8
+            ],
+            [
+              12,
+              17
+            ],
+            [
+              20.5,
+              8
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "clock": {
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 2.2, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 2.2,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
-      { "type": "ellipse", "props": { "place": { "left": 2, "top": 2 }, "size": 20 } },
-      { "type": "path", "props": { "points": [[12, 6], [12, 12.5], [16.5, 14.5]] } }
+      {
+        "type": "ellipse",
+        "props": {
+          "place": {
+            "left": 2,
+            "top": 2
+          },
+          "size": 20
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              12,
+              6
+            ],
+            [
+              12,
+              12.5
+            ],
+            [
+              16.5,
+              14.5
+            ]
+          ]
+        }
+      }
     ]
   },
-
   "share": {
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 1.7, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 1.7,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
       {
         "type": "path",
         "props": {
           "points": [
-            [8.5, 8.8], [6.8, 8.8], [4.6, 11], [4.6, 20.5], [6.8, 22.7],
-            [17.2, 22.7], [19.4, 20.5], [19.4, 11], [17.2, 8.8], [15.5, 8.8]
+            [
+              8.5,
+              8.8
+            ],
+            [
+              6.8,
+              8.8
+            ],
+            [
+              4.6,
+              11
+            ],
+            [
+              4.6,
+              20.5
+            ],
+            [
+              6.8,
+              22.7
+            ],
+            [
+              17.2,
+              22.7
+            ],
+            [
+              19.4,
+              20.5
+            ],
+            [
+              19.4,
+              11
+            ],
+            [
+              17.2,
+              8.8
+            ],
+            [
+              15.5,
+              8.8
+            ]
           ]
         }
       },
-      { "type": "path", "props": { "points": [[12, 15.5], [12, 1.8]] } },
-      { "type": "path", "props": { "points": [[8.2, 5.2], [12, 1.5], [15.8, 5.2]] } }
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              12,
+              15.5
+            ],
+            [
+              12,
+              1.8
+            ]
+          ]
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              8.2,
+              5.2
+            ],
+            [
+              12,
+              1.5
+            ],
+            [
+              15.8,
+              5.2
+            ]
+          ]
+        }
+      }
     ]
   },
-
   "refresh": {
     "$comment": "An arc open at the top right, with the arrow head on its leading end.",
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 1.9, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 1.9,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
       {
         "type": "arc",
         "props": {
-          "place": { "left": 3, "top": 4 },
+          "place": {
+            "left": 3,
+            "top": 4
+          },
           "size": 18,
           "start_deg": -40,
           "sweep_deg": 300
         }
       },
-      { "type": "path", "props": { "points": [[10.6, 0.6], [14.8, 4.3], [10.6, 8]] } }
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              10.6,
+              0.6
+            ],
+            [
+              14.8,
+              4.3
+            ],
+            [
+              10.6,
+              8
+            ]
+          ]
+        }
+      }
     ]
   },
-
   "book.closed": {
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 1.5, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 1.5,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
       {
         "type": "box",
         "props": {
-          "place": { "left": 4.5, "top": 1.5 },
-          "size": { "width": 15, "height": 18 },
+          "place": {
+            "left": 4.5,
+            "top": 1.5
+          },
+          "size": {
+            "width": 15,
+            "height": 18
+          },
           "radius": 2.4
         }
       },
-      { "type": "path", "props": { "points": [[7.8, 2], [7.8, 15.8]] } },
-      { "type": "path", "props": { "points": [[19.2, 15.8], [7, 15.8], [4.7, 17.4]] } },
       {
         "type": "path",
-        "props": { "points": [[5, 19], [6.2, 21.6], [19.5, 21.6], [18.2, 19.6]] }
+        "props": {
+          "points": [
+            [
+              7.8,
+              2
+            ],
+            [
+              7.8,
+              15.8
+            ]
+          ]
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              19.2,
+              15.8
+            ],
+            [
+              7,
+              15.8
+            ],
+            [
+              4.7,
+              17.4
+            ]
+          ]
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              5,
+              19
+            ],
+            [
+              6.2,
+              21.6
+            ],
+            [
+              19.5,
+              21.6
+            ],
+            [
+              18.2,
+              19.6
+            ]
+          ]
+        }
       }
     ]
   },
-
   "arrow.down.circle": {
     "grid": 24,
     "children": [
       {
         "type": "ellipse",
         "props": {
-          "place": { "left": 1.8, "top": 1.8 },
+          "place": {
+            "left": 1.8,
+            "top": 1.8
+          },
           "size": 20.4,
-          "stroke": { "color": "$color", "width": 1.7, "cap": "round", "join": "round" }
+          "stroke": {
+            "color": "$color",
+            "width": 1.7,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[12, 6], [12, 17.5]],
-          "stroke": { "color": "$color", "width": 1.8, "cap": "round", "join": "round" }
+          "points": [
+            [
+              12,
+              6
+            ],
+            [
+              12,
+              17.5
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 1.8,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7.5, 13], [12, 17.5], [16.5, 13]],
-          "stroke": { "color": "$color", "width": 1.8, "cap": "round", "join": "round" }
+          "points": [
+            [
+              7.5,
+              13
+            ],
+            [
+              12,
+              17.5
+            ],
+            [
+              16.5,
+              13
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 1.8,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "arrow.down.circle.fill": {
     "$comment": "The arrow is cut out of the disc, so it stays a hole over any background.",
     "grid": 24,
-    "props": { "isolate": true },
+    "props": {
+      "isolate": true
+    },
     "children": [
       {
         "type": "ellipse",
-        "props": { "place": { "left": 1, "top": 1 }, "size": 22, "fill": "$color" }
-      },
-      {
-        "type": "path",
         "props": {
-          "points": [[12, 6], [12, 17.5]],
-          "blend": "dst-out",
-          "stroke": { "color": "#FF000000", "width": 2.6, "cap": "round", "join": "round" }
+          "place": {
+            "left": 1,
+            "top": 1
+          },
+          "size": 22,
+          "fill": "$color"
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7.5, 13], [12, 17.5], [16.5, 13]],
+          "points": [
+            [
+              12,
+              6
+            ],
+            [
+              12,
+              17.5
+            ]
+          ],
           "blend": "dst-out",
-          "stroke": { "color": "#FF000000", "width": 2.6, "cap": "round", "join": "round" }
+          "stroke": {
+            "color": "#FF000000",
+            "width": 2.6,
+            "cap": "round",
+            "join": "round"
+          }
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              7.5,
+              13
+            ],
+            [
+              12,
+              17.5
+            ],
+            [
+              16.5,
+              13
+            ]
+          ],
+          "blend": "dst-out",
+          "stroke": {
+            "color": "#FF000000",
+            "width": 2.6,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "check.circle.fill": {
     "grid": 24,
-    "props": { "isolate": true },
+    "props": {
+      "isolate": true
+    },
     "children": [
       {
         "type": "ellipse",
-        "props": { "place": { "left": 1, "top": 1 }, "size": 22, "fill": "$color" }
+        "props": {
+          "place": {
+            "left": 1,
+            "top": 1
+          },
+          "size": 22,
+          "fill": "$color"
+        }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7, 12.8], [10.6, 16.4], [17, 8]],
+          "points": [
+            [
+              7,
+              12.8
+            ],
+            [
+              10.6,
+              16.4
+            ],
+            [
+              17,
+              8
+            ]
+          ],
           "blend": "dst-out",
-          "stroke": { "color": "#FF000000", "width": 2.3, "cap": "round", "join": "round" }
+          "stroke": {
+            "color": "#FF000000",
+            "width": 2.3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "warning.fill": {
     "$comment": "Filled and stroked with the same path, which is how the corners come out round.",
     "grid": 24,
-    "props": { "isolate": true },
+    "props": {
+      "isolate": true
+    },
     "children": [
       {
         "type": "path",
         "props": {
           "commands": [
-            { "move": [12, 4] },
-            { "line": [21.5, 20] },
-            { "line": [2.5, 20] },
-            { "close": true }
+            {
+              "move": [
+                12,
+                4
+              ]
+            },
+            {
+              "line": [
+                21.5,
+                20
+              ]
+            },
+            {
+              "line": [
+                2.5,
+                20
+              ]
+            },
+            {
+              "close": true
+            }
           ],
           "fill": "$color",
-          "stroke": { "color": "$color", "width": 3.5, "cap": "round", "join": "round" }
+          "stroke": {
+            "color": "$color",
+            "width": 3.5,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "box",
         "props": {
-          "place": { "left": 10.8, "top": 8 },
-          "size": { "width": 2.4, "height": 7.5 },
+          "place": {
+            "left": 10.8,
+            "top": 8
+          },
+          "size": {
+            "width": 2.4,
+            "height": 7.5
+          },
           "radius": 1.2,
           "fill": "#FF000000",
           "blend": "dst-out"
@@ -242,7 +681,10 @@
       {
         "type": "ellipse",
         "props": {
-          "place": { "left": 10.5, "top": 16.5 },
+          "place": {
+            "left": 10.5,
+            "top": 16.5
+          },
           "size": 3,
           "fill": "#FF000000",
           "blend": "dst-out"
@@ -250,94 +692,484 @@
       }
     ]
   },
-
   "error.fill": {
     "$comment": "White marks rather than holes, so the disc reads on a coloured background.",
     "grid": 24,
     "children": [
       {
         "type": "ellipse",
-        "props": { "place": { "left": 1, "top": 1 }, "size": 22, "fill": "$color" }
+        "props": {
+          "place": {
+            "left": 1,
+            "top": 1
+          },
+          "size": 22,
+          "fill": "$color"
+        }
       },
       {
         "type": "box",
         "props": {
-          "place": { "left": 10.8, "top": 5.6 },
-          "size": { "width": 2.4, "height": 8.6 },
+          "place": {
+            "left": 10.8,
+            "top": 5.6
+          },
+          "size": {
+            "width": 2.4,
+            "height": 8.6
+          },
           "radius": 1.2,
           "fill": "#FFFFFFFF"
         }
       },
       {
         "type": "ellipse",
-        "props": { "place": { "left": 10.5, "top": 15.9 }, "size": 3, "fill": "#FFFFFFFF" }
+        "props": {
+          "place": {
+            "left": 10.5,
+            "top": 15.9
+          },
+          "size": 3,
+          "fill": "#FFFFFFFF"
+        }
       }
     ]
   },
-
   "doc.on.doc": {
     "grid": 24,
-    "props": { "stroke": { "color": "$color", "width": 1.7, "cap": "round", "join": "round" } },
+    "props": {
+      "stroke": {
+        "color": "$color",
+        "width": 1.7,
+        "cap": "round",
+        "join": "round"
+      }
+    },
     "children": [
       {
         "type": "path",
         "props": {
           "points": [
-            [7, 5.5], [7, 3.3], [8.8, 1.6], [14.5, 1.6], [20.3, 7.4],
-            [20.3, 16.2], [18.5, 18], [17, 18]
+            [
+              7,
+              5.5
+            ],
+            [
+              7,
+              3.3
+            ],
+            [
+              8.8,
+              1.6
+            ],
+            [
+              14.5,
+              1.6
+            ],
+            [
+              20.3,
+              7.4
+            ],
+            [
+              20.3,
+              16.2
+            ],
+            [
+              18.5,
+              18
+            ],
+            [
+              17,
+              18
+            ]
           ]
         }
       },
-      { "type": "path", "props": { "points": [[14.2, 1.8], [14.2, 7.6], [20, 7.6]] } },
+      {
+        "type": "path",
+        "props": {
+          "points": [
+            [
+              14.2,
+              1.8
+            ],
+            [
+              14.2,
+              7.6
+            ],
+            [
+              20,
+              7.6
+            ]
+          ]
+        }
+      },
       {
         "type": "box",
         "props": {
-          "place": { "left": 3.7, "top": 5.8 },
-          "size": { "width": 13.1, "height": 16.6 },
+          "place": {
+            "left": 3.7,
+            "top": 5.8
+          },
+          "size": {
+            "width": 13.1,
+            "height": 16.6
+          },
           "radius": 2.2
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7.3, 12], [13.3, 12]],
-          "stroke": { "color": "$color", "width": 1.3, "cap": "round", "join": "round" }
+          "points": [
+            [
+              7.3,
+              12
+            ],
+            [
+              13.3,
+              12
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 1.3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7.3, 15], [13.3, 15]],
-          "stroke": { "color": "$color", "width": 1.3, "cap": "round", "join": "round" }
+          "points": [
+            [
+              7.3,
+              15
+            ],
+            [
+              13.3,
+              15
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 1.3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       },
       {
         "type": "path",
         "props": {
-          "points": [[7.3, 18], [13.3, 18]],
-          "stroke": { "color": "$color", "width": 1.3, "cap": "round", "join": "round" }
+          "points": [
+            [
+              7.3,
+              18
+            ],
+            [
+              13.3,
+              18
+            ]
+          ],
+          "stroke": {
+            "color": "$color",
+            "width": 1.3,
+            "cap": "round",
+            "join": "round"
+          }
         }
       }
     ]
   },
-
   "person.fill": {
     "grid": 24,
     "children": [
       {
         "type": "ellipse",
-        "props": { "place": { "left": 6.8, "top": 1.8 }, "size": 10.4, "fill": "$color" }
+        "props": {
+          "place": {
+            "left": 6.8,
+            "top": 1.8
+          },
+          "size": 10.4,
+          "fill": "$color"
+        }
       },
       {
         "type": "path",
         "props": {
           "commands": [
-            { "move": [2.5, 22] },
-            { "cubic": [[2.5, 15], [7.5, 13.5], [12, 13.5]] },
-            { "cubic": [[16.5, 13.5], [21.5, 15], [21.5, 22]] },
-            { "close": true }
+            {
+              "move": [
+                2.5,
+                22
+              ]
+            },
+            {
+              "cubic": [
+                [
+                  2.5,
+                  15
+                ],
+                [
+                  7.5,
+                  13.5
+                ],
+                [
+                  12,
+                  13.5
+                ]
+              ]
+            },
+            {
+              "cubic": [
+                [
+                  16.5,
+                  13.5
+                ],
+                [
+                  21.5,
+                  15
+                ],
+                [
+                  21.5,
+                  22
+                ]
+              ]
+            },
+            {
+              "close": true
+            }
           ],
           "fill": "$color"
+        }
+      }
+    ]
+  },
+  "play.fill": {
+    "grid": 24,
+    "children": [
+      {
+        "type": "path",
+        "props": {
+          "commands": [
+            {
+              "move": [
+                7.5,
+                4.5
+              ]
+            },
+            {
+              "line": [
+                19.5,
+                12
+              ]
+            },
+            {
+              "line": [
+                7.5,
+                19.5
+              ]
+            },
+            {
+              "close": true
+            }
+          ],
+          "fill": "$color",
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "join": "round",
+            "cap": "round"
+          }
+        }
+      }
+    ]
+  },
+  "pause.fill": {
+    "grid": 24,
+    "props": {
+      "color": "$color"
+    },
+    "children": [
+      {
+        "type": "box",
+        "props": {
+          "place": {
+            "left": 6.6,
+            "top": 4.5
+          },
+          "size": {
+            "width": 3.8,
+            "height": 15
+          },
+          "radius": 1.9
+        }
+      },
+      {
+        "type": "box",
+        "props": {
+          "place": {
+            "left": 13.6,
+            "top": 4.5
+          },
+          "size": {
+            "width": 3.8,
+            "height": 15
+          },
+          "radius": 1.9
+        }
+      }
+    ]
+  },
+  "forward.fill": {
+    "grid": 24,
+    "children": [
+      {
+        "type": "path",
+        "props": {
+          "commands": [
+            {
+              "move": [
+                3,
+                5
+              ]
+            },
+            {
+              "line": [
+                12.5,
+                12
+              ]
+            },
+            {
+              "line": [
+                3,
+                19
+              ]
+            },
+            {
+              "close": true
+            }
+          ],
+          "fill": "$color",
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "join": "round",
+            "cap": "round"
+          }
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "commands": [
+            {
+              "move": [
+                11.5,
+                5
+              ]
+            },
+            {
+              "line": [
+                21,
+                12
+              ]
+            },
+            {
+              "line": [
+                11.5,
+                19
+              ]
+            },
+            {
+              "close": true
+            }
+          ],
+          "fill": "$color",
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "join": "round",
+            "cap": "round"
+          }
+        }
+      }
+    ]
+  },
+  "backward.fill": {
+    "grid": 24,
+    "children": [
+      {
+        "type": "path",
+        "props": {
+          "commands": [
+            {
+              "move": [
+                21,
+                5
+              ]
+            },
+            {
+              "line": [
+                11.5,
+                12
+              ]
+            },
+            {
+              "line": [
+                21,
+                19
+              ]
+            },
+            {
+              "close": true
+            }
+          ],
+          "fill": "$color",
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "join": "round",
+            "cap": "round"
+          }
+        }
+      },
+      {
+        "type": "path",
+        "props": {
+          "commands": [
+            {
+              "move": [
+                12.5,
+                5
+              ]
+            },
+            {
+              "line": [
+                3,
+                12
+              ]
+            },
+            {
+              "line": [
+                12.5,
+                19
+              ]
+            },
+            {
+              "close": true
+            }
+          ],
+          "fill": "$color",
+          "stroke": {
+            "color": "$color",
+            "width": 2.4,
+            "join": "round",
+            "cap": "round"
+          }
         }
       }
     ]

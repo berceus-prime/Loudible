@@ -1,0 +1,75 @@
+{
+  "$render": {
+    "size": [
+      760,
+      430
+    ],
+    "scale": 2
+  },
+  "icons": [
+    {
+      "name": "book.closed",
+      "color": "#FFE4572E"
+    },
+    {
+      "name": "search",
+      "color": "#FFF2A33C"
+    },
+    {
+      "name": "refresh",
+      "color": "#FFD4B106"
+    },
+    {
+      "name": "arrow.down.circle",
+      "color": "#FF76B041"
+    },
+    {
+      "name": "arrow.down.circle.fill",
+      "color": "#FF17A398"
+    },
+    {
+      "name": "share",
+      "color": "#FF1E88C7"
+    },
+    {
+      "name": "check.circle.fill",
+      "color": "#FF3F51B5"
+    },
+    {
+      "name": "clock",
+      "color": "#FF7B4FB5"
+    },
+    {
+      "name": "warning.fill",
+      "color": "#FFC2185B"
+    },
+    {
+      "name": "error.fill",
+      "color": "#FFE4572E"
+    },
+    {
+      "name": "doc.on.doc",
+      "color": "#FFF2A33C"
+    },
+    {
+      "name": "check",
+      "color": "#FF76B041"
+    },
+    {
+      "name": "person.fill",
+      "color": "#FF17A398"
+    },
+    {
+      "name": "xmark",
+      "color": "#FF1E88C7"
+    },
+    {
+      "name": "chevron.right",
+      "color": "#FF3F51B5"
+    },
+    {
+      "name": "chevron.down",
+      "color": "#FF7B4FB5"
+    }
+  ]
+}

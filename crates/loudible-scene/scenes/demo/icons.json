@@ -1,0 +1,78 @@
+{
+  "$comment": "Every symbol in the table, each drawn from its own vector tree and tinted from data.",
+  "type": "stack",
+  "props": {
+    "axis": "y",
+    "gap": 22,
+    "padding": 32,
+    "size": { "width": "fill", "height": "fill" },
+    "fill": "window"
+  },
+  "children": [
+    {
+      "type": "stack",
+      "props": { "axis": "y", "gap": 4 },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "Symbols",
+            "style": { "style": "title3", "weight": "bold" },
+            "color": "label"
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "Circles, rounded boxes, polylines and cubics on a 24-unit grid, scaled to the box and tinted by the node that draws them",
+            "style": "callout",
+            "color": "secondary",
+            "wrap": true,
+            "size": { "width": "fill" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "grid",
+      "props": { "min_cell": 104, "gap": 14, "row_gap": 14, "size": { "height": "fill" } },
+      "children": [
+        {
+          "type": "stack",
+          "repeat": { "for": "icon", "in": "$icons" },
+          "props": {
+            "axis": "y",
+            "gap": 10,
+            "align": "center",
+            "padding": [14, 8],
+            "size": { "width": "fill", "height": "hug" },
+            "radius": 14,
+            "fill": { "mix": [{ "$": "icon.color" }, "window", 0.88] },
+            "stroke": { "color": { "mix": [{ "$": "icon.color" }, "window", 0.7] }, "width": 1, "align": "inside" }
+          },
+          "children": [
+            {
+              "type": "symbol",
+              "props": {
+                "name": { "$": "icon.name" },
+                "size": 34,
+                "color": { "$": "icon.color" }
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": { "$": "icon.name" },
+                "style": "caption",
+                "color": "secondary",
+                "align": "center",
+                "truncate": "ellipsis",
+                "size": { "width": "fill" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

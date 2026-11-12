@@ -1,0 +1,78 @@
+{
+  "$comment": "Every colour token in the theme, driven entirely from data: the swatch's fill is the token's own name.",
+  "type": "stack",
+  "props": {
+    "axis": "y",
+    "gap": 20,
+    "padding": 32,
+    "size": { "width": "fill", "height": "fill" },
+    "fill": "window"
+  },
+  "children": [
+    {
+      "type": "stack",
+      "props": { "axis": "y", "gap": 4 },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "Theme tokens",
+            "style": { "style": "title3", "weight": "bold" },
+            "color": "label"
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": { "format": "{count} semantic colours, each resolved for this appearance" },
+            "style": "callout",
+            "color": "secondary"
+          }
+        }
+      ]
+    },
+    {
+      "type": "grid",
+      "props": { "min_cell": 150, "gap": 16, "row_gap": 18, "size": { "height": "fill" } },
+      "children": [
+        {
+          "type": "stack",
+          "repeat": { "for": "token", "in": "$tokens" },
+          "props": { "axis": "y", "gap": 7, "size": { "width": "fill", "height": "hug" } },
+          "children": [
+            {
+              "type": "box",
+              "props": {
+                "size": { "width": "fill", "height": 54 },
+                "radius": 10,
+                "fill": { "$": "token.name" },
+                "stroke": { "color": "separator", "width": 1, "align": "inside" },
+                "shadow": { "color": "#14000000", "blur": 4, "dy": 1 }
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": { "$": "token.name" },
+                "style": { "style": "caption", "weight": "medium" },
+                "color": "label",
+                "truncate": "ellipsis",
+                "size": { "width": "fill" }
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": { "$": "token.note" },
+                "style": "caption",
+                "color": "tertiary",
+                "truncate": "ellipsis",
+                "size": { "width": "fill" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

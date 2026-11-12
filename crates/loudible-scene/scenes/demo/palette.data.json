@@ -1,0 +1,84 @@
+{
+  "$render": {
+    "size": [
+      900,
+      560
+    ],
+    "scale": 2
+  },
+  "count": 18,
+  "tokens": [
+    {
+      "name": "window",
+      "note": "the window itself"
+    },
+    {
+      "name": "label",
+      "note": "primary text"
+    },
+    {
+      "name": "secondary",
+      "note": "supporting text"
+    },
+    {
+      "name": "tertiary",
+      "note": "disabled text"
+    },
+    {
+      "name": "placeholder_fill",
+      "note": "empty covers"
+    },
+    {
+      "name": "separator",
+      "note": "hairlines"
+    },
+    {
+      "name": "control",
+      "note": "bordered buttons"
+    },
+    {
+      "name": "control_pressed",
+      "note": "while held"
+    },
+    {
+      "name": "glass",
+      "note": "toolbar capsules"
+    },
+    {
+      "name": "glass_rim",
+      "note": "their rim"
+    },
+    {
+      "name": "cover_rim",
+      "note": "around artwork"
+    },
+    {
+      "name": "material",
+      "note": "blurred panels"
+    },
+    {
+      "name": "material_rim",
+      "note": "their rim"
+    },
+    {
+      "name": "on_material",
+      "note": "text on them"
+    },
+    {
+      "name": "toast_button",
+      "note": "a toast's button"
+    },
+    {
+      "name": "accent",
+      "note": "selection, default"
+    },
+    {
+      "name": "red",
+      "note": "errors, destructive"
+    },
+    {
+      "name": "orange",
+      "note": "warnings"
+    }
+  ]
+}

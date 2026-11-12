@@ -1,0 +1,89 @@
+{
+  "$render": {
+    "size": [
+      880,
+      620
+    ],
+    "scale": 2
+  },
+  "bars": [
+    {
+      "value": 34,
+      "color": "#FFE4572E"
+    },
+    {
+      "value": 58,
+      "color": "#FFF2A33C"
+    },
+    {
+      "value": 41,
+      "color": "#FFD4B106"
+    },
+    {
+      "value": 96,
+      "color": "#FF76B041"
+    },
+    {
+      "value": 72,
+      "color": "#FF17A398"
+    },
+    {
+      "value": 120,
+      "color": "#FF1E88C7"
+    },
+    {
+      "value": 88,
+      "color": "#FF3F51B5"
+    },
+    {
+      "value": 134,
+      "color": "#FF7B4FB5"
+    },
+    {
+      "value": 61,
+      "color": "#FFC2185B"
+    },
+    {
+      "value": 110,
+      "color": "#FFE4572E"
+    },
+    {
+      "value": 47,
+      "color": "#FFF2A33C"
+    },
+    {
+      "value": 79,
+      "color": "#FFD4B106"
+    },
+    {
+      "value": 126,
+      "color": "#FF76B041"
+    },
+    {
+      "value": 93,
+      "color": "#FF17A398"
+    }
+  ],
+  "rings": {
+    "downloaded": 0.82,
+    "exported": 0.54,
+    "failed": 0.12
+  },
+  "legend": [
+    {
+      "label": "Downloaded",
+      "color": "#FF17A398",
+      "value": "203"
+    },
+    {
+      "label": "Exported",
+      "color": "#FF3F51B5",
+      "value": "134"
+    },
+    {
+      "label": "Failed",
+      "color": "#FFE4572E",
+      "value": "29"
+    }
+  ]
+}

@@ -1,0 +1,608 @@
+{
+  "$comment": "A composition rather than a catalogue: gradients, a vinyl built from arcs, a waveform driven by `repeat`, and a progress bar whose width is bound.",
+  "type": "layer",
+  "props": {
+    "size": {
+      "width": "fill",
+      "height": "fill"
+    },
+    "fill": {
+      "gradient": {
+        "from": "top-left",
+        "to": "bottom-right",
+        "stops": [
+          "#FF1B1038",
+          "#FF0E3B3A"
+        ]
+      }
+    }
+  },
+  "children": [
+    {
+      "type": "ellipse",
+      "props": {
+        "place": {
+          "right": -120,
+          "top": -140
+        },
+        "size": 380,
+        "fill": {
+          "hex": "#FF7B4FB5",
+          "opacity": 0.35
+        }
+      }
+    },
+    {
+      "type": "ellipse",
+      "props": {
+        "place": {
+          "left": -90,
+          "bottom": -150
+        },
+        "size": 320,
+        "fill": {
+          "hex": "#FF17A398",
+          "opacity": 0.3
+        }
+      }
+    },
+    {
+      "type": "layer",
+      "props": {
+        "place": {
+          "left": 52,
+          "center_y": 0
+        },
+        "size": 268,
+        "shadow": {
+          "color": "#73000000",
+          "blur": 40,
+          "dy": 18
+        },
+        "radius": "capsule"
+      },
+      "children": [
+        {
+          "type": "ellipse",
+          "props": {
+            "size": 268,
+            "fill": {
+              "gradient": {
+                "from": "top-left",
+                "to": "bottom-right",
+                "stops": [
+                  "#FF26283B",
+                  "#FF101019"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "arc",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 236,
+            "sweep_deg": 360,
+            "stroke": {
+              "color": "#14FFFFFF",
+              "width": 1.5
+            }
+          }
+        },
+        {
+          "type": "arc",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 206,
+            "sweep_deg": 360,
+            "stroke": {
+              "color": "#14FFFFFF",
+              "width": 1.5
+            }
+          }
+        },
+        {
+          "type": "arc",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 176,
+            "sweep_deg": 360,
+            "stroke": {
+              "color": "#14FFFFFF",
+              "width": 1.5
+            }
+          }
+        },
+        {
+          "type": "arc",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 146,
+            "sweep_deg": 360,
+            "stroke": {
+              "color": "#14FFFFFF",
+              "width": 1.5
+            }
+          }
+        },
+        {
+          "type": "arc",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 252,
+            "start_deg": -120,
+            "progress": {
+              "$": "progress"
+            },
+            "stroke": {
+              "color": "#FF7BE8D8",
+              "width": 4,
+              "cap": "round"
+            }
+          }
+        },
+        {
+          "type": "ellipse",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 104,
+            "fill": {
+              "gradient": {
+                "stops": [
+                  "#FFE4572E",
+                  "#FFC2185B"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": -14
+            },
+            "size": 30,
+            "name": "book.closed",
+            "color": "#CCFFFFFF"
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "SIDE A",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "#B3FFFFFF",
+            "place": {
+              "center_x": 0,
+              "center_y": 16
+            },
+            "align": "center"
+          }
+        },
+        {
+          "type": "ellipse",
+          "props": {
+            "place": {
+              "center_x": 0,
+              "center_y": 0
+            },
+            "size": 14,
+            "fill": "#FF0E0E16"
+          }
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 16,
+        "place": {
+          "left": 368,
+          "right": 48,
+          "center_y": 0
+        },
+        "size": {
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 8,
+            "align": "center",
+            "size": {
+              "width": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "ellipse",
+              "props": {
+                "size": 7,
+                "fill": "#FF7BE8D8"
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": "NOW PLAYING",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "#FF7BE8D8"
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "The Long Way to a Small, Angry Planet",
+            "style": {
+              "style": "title3",
+              "weight": "bold"
+            },
+            "color": "#FFFFFFFF",
+            "wrap": true,
+            "max_lines": 2,
+            "size": {
+              "width": "fill"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "Becky Chambers \u00b7 narrated by Rachel Dulude",
+            "style": "callout",
+            "color": "#A6FFFFFF"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 3,
+            "align": "center",
+            "size": {
+              "width": "fill",
+              "height": 84
+            }
+          },
+          "children": [
+            {
+              "type": "box",
+              "repeat": {
+                "for": "bar",
+                "in": "$wave"
+              },
+              "props": {
+                "size": {
+                  "width": 4,
+                  "height": {
+                    "$": "bar.h"
+                  }
+                },
+                "radius": 2,
+                "align_self": "center",
+                "fill": "#33FFFFFF"
+              },
+              "variants": [
+                {
+                  "when": "bar.played",
+                  "props": {
+                    "fill": "#FF7BE8D8"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "layer",
+          "props": {
+            "size": {
+              "width": "fill",
+              "height": 6
+            }
+          },
+          "children": [
+            {
+              "type": "box",
+              "props": {
+                "place": {
+                  "left": 0,
+                  "right": 0,
+                  "center_y": 0
+                },
+                "size": {
+                  "height": 6
+                },
+                "radius": 3,
+                "fill": "#26FFFFFF"
+              }
+            },
+            {
+              "type": "layer",
+              "props": {
+                "place": {
+                  "left": 0,
+                  "center_y": 0
+                },
+                "size": {
+                  "width": {
+                    "$": "played_width"
+                  },
+                  "height": 6
+                },
+                "radius": 3,
+                "fill": {
+                  "gradient": {
+                    "from": "left",
+                    "to": "right",
+                    "stops": [
+                      "#FF7BE8D8",
+                      "#FFF2A33C"
+                    ]
+                  }
+                }
+              },
+              "$comment": "The thumb rides the filled part, since `place` takes points rather than a binding.",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "props": {
+                    "place": {
+                      "right": -7,
+                      "center_y": 0
+                    },
+                    "size": 14,
+                    "fill": "#FFFFFFFF",
+                    "shadow": {
+                      "color": "#59000000",
+                      "blur": 8,
+                      "dy": 2
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "justify": "space-between",
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": {
+                  "$": "elapsed"
+                },
+                "style": {
+                  "style": "caption",
+                  "tabular": true
+                },
+                "color": "#A6FFFFFF"
+              }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": {
+                  "$": "remaining"
+                },
+                "style": {
+                  "style": "caption",
+                  "tabular": true
+                },
+                "color": "#A6FFFFFF"
+              }
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 14,
+            "align": "center",
+            "size": {
+              "width": "hug"
+            }
+          },
+          "children": [
+            {
+              "type": "layer",
+              "props": {
+                "size": 44,
+                "radius": "capsule",
+                "fill": "#1FFFFFFF",
+                "hit": {
+                  "action": "transport",
+                  "args": {
+                    "button": "backward.fill"
+                  },
+                  "tooltip": "backward.fill"
+                }
+              },
+              "children": [
+                {
+                  "type": "symbol",
+                  "props": {
+                    "place": {
+                      "center_x": 0,
+                      "center_y": 0
+                    },
+                    "size": 20,
+                    "name": "backward.fill",
+                    "color": "#FFFFFFFF"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "layer",
+              "props": {
+                "size": 56,
+                "radius": "capsule",
+                "fill": "#FF7BE8D8",
+                "hit": {
+                  "action": "transport",
+                  "args": {
+                    "button": "play.fill"
+                  },
+                  "tooltip": "play.fill"
+                }
+              },
+              "children": [
+                {
+                  "type": "symbol",
+                  "props": {
+                    "place": {
+                      "center_x": 0,
+                      "center_y": 0
+                    },
+                    "size": 24,
+                    "name": "play.fill",
+                    "color": "#FF0E1A21"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "layer",
+              "props": {
+                "size": 44,
+                "radius": "capsule",
+                "fill": "#1FFFFFFF",
+                "hit": {
+                  "action": "transport",
+                  "args": {
+                    "button": "forward.fill"
+                  },
+                  "tooltip": "forward.fill"
+                }
+              },
+              "children": [
+                {
+                  "type": "symbol",
+                  "props": {
+                    "place": {
+                      "center_x": 0,
+                      "center_y": 0
+                    },
+                    "size": 20,
+                    "name": "forward.fill",
+                    "color": "#FFFFFFFF"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "spacer",
+              "props": {
+                "size": {
+                  "width": 12
+                }
+              }
+            },
+            {
+              "type": "layer",
+              "props": {
+                "size": 44,
+                "radius": "capsule",
+                "fill": "#1FFFFFFF",
+                "hit": {
+                  "action": "transport",
+                  "args": {
+                    "button": "share"
+                  },
+                  "tooltip": "share"
+                }
+              },
+              "children": [
+                {
+                  "type": "symbol",
+                  "props": {
+                    "place": {
+                      "center_x": 0,
+                      "center_y": 0
+                    },
+                    "size": 19,
+                    "name": "share",
+                    "color": "#FFFFFFFF"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "layer",
+              "props": {
+                "size": 44,
+                "radius": "capsule",
+                "fill": "#1FFFFFFF",
+                "hit": {
+                  "action": "transport",
+                  "args": {
+                    "button": "arrow.down.circle"
+                  },
+                  "tooltip": "arrow.down.circle"
+                }
+              },
+              "children": [
+                {
+                  "type": "symbol",
+                  "props": {
+                    "place": {
+                      "center_x": 0,
+                      "center_y": 0
+                    },
+                    "size": 21,
+                    "name": "arrow.down.circle",
+                    "color": "#FFFFFFFF"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

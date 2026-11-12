@@ -1,0 +1,605 @@
+{
+  "$comment": "Everything here is driven by `repeat` and bound numbers: bar heights, ring sweeps and legend rows all come from the data file.",
+  "type": "stack",
+  "props": {
+    "axis": "y",
+    "gap": 20,
+    "padding": 28,
+    "fill": "#FFF6F7FB",
+    "size": {
+      "width": "fill",
+      "height": "fill"
+    }
+  },
+  "children": [
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 4
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "Charts from data",
+            "style": {
+              "style": "title3",
+              "weight": "bold"
+            },
+            "color": "label"
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": "A repeat over an array, with each bar's height and colour read from it.",
+            "style": "callout",
+            "color": "secondary"
+          }
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "y",
+        "gap": 16,
+        "padding": 20,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        },
+        "radius": 18,
+        "fill": "window",
+        "stroke": {
+          "color": "separator",
+          "width": 1,
+          "align": "inside"
+        },
+        "shadow": {
+          "color": "#14000000",
+          "blur": 14,
+          "dy": 4
+        }
+      },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": "EXPORTS PER WEEK",
+            "style": {
+              "style": "caption",
+              "weight": "bold"
+            },
+            "color": "tertiary"
+          }
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 8,
+            "size": {
+              "width": "fill",
+              "height": 140
+            }
+          },
+          "children": [
+            {
+              "type": "layer",
+              "repeat": {
+                "for": "bar",
+                "in": "$bars"
+              },
+              "props": {
+                "size": {
+                  "width": "fill",
+                  "height": 140
+                }
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "props": {
+                    "place": {
+                      "left": 0,
+                      "right": 0,
+                      "bottom": 0
+                    },
+                    "size": {
+                      "height": {
+                        "$": "bar.value"
+                      }
+                    },
+                    "radius": {
+                      "tl": 6,
+                      "tr": 6
+                    },
+                    "fill": {
+                      "$": "bar.color"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "stack",
+      "props": {
+        "axis": "x",
+        "gap": 20,
+        "size": {
+          "width": "fill",
+          "height": "hug"
+        }
+      },
+      "children": [
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 16,
+            "padding": 20,
+            "size": {
+              "width": "hug",
+              "height": "hug"
+            },
+            "radius": 18,
+            "fill": "window",
+            "stroke": {
+              "color": "separator",
+              "width": 1,
+              "align": "inside"
+            },
+            "shadow": {
+              "color": "#14000000",
+              "blur": 14,
+              "dy": 4
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "LIBRARY",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "tertiary"
+              }
+            },
+            {
+              "type": "stack",
+              "props": {
+                "axis": "x",
+                "gap": 24,
+                "align": "center",
+                "size": {
+                  "width": "hug"
+                }
+              },
+              "children": [
+                {
+                  "type": "layer",
+                  "props": {
+                    "size": {
+                      "width": 168,
+                      "height": 168
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "arc",
+                      "props": {
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        },
+                        "size": 168,
+                        "progress": {
+                          "$": "rings.downloaded"
+                        },
+                        "start_deg": -90,
+                        "track": {
+                          "color": "#FFD9F0EE",
+                          "width": 11
+                        },
+                        "stroke": {
+                          "color": "#FF17A398",
+                          "width": 11,
+                          "cap": "round"
+                        }
+                      }
+                    },
+                    {
+                      "type": "arc",
+                      "props": {
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        },
+                        "size": 136,
+                        "progress": {
+                          "$": "rings.exported"
+                        },
+                        "start_deg": -90,
+                        "track": {
+                          "color": "#FFDFE2F4",
+                          "width": 11
+                        },
+                        "stroke": {
+                          "color": "#FF3F51B5",
+                          "width": 11,
+                          "cap": "round"
+                        }
+                      }
+                    },
+                    {
+                      "type": "arc",
+                      "props": {
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        },
+                        "size": 104,
+                        "progress": {
+                          "$": "rings.failed"
+                        },
+                        "start_deg": -90,
+                        "track": {
+                          "color": "#FFF8DFD7",
+                          "width": 11
+                        },
+                        "stroke": {
+                          "color": "#FFE4572E",
+                          "width": 11,
+                          "cap": "round"
+                        }
+                      }
+                    },
+                    {
+                      "type": "stack",
+                      "props": {
+                        "axis": "y",
+                        "gap": 0,
+                        "align": "center",
+                        "size": {
+                          "width": "hug",
+                          "height": "hug"
+                        },
+                        "place": {
+                          "center_x": 0,
+                          "center_y": 0
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "props": {
+                            "value": "248",
+                            "style": {
+                              "style": "title3",
+                              "weight": "bold"
+                            },
+                            "color": "label",
+                            "align": "center"
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "props": {
+                            "value": "titles",
+                            "style": "caption",
+                            "color": "tertiary",
+                            "align": "center"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "props": {
+                    "axis": "y",
+                    "gap": 11,
+                    "size": {
+                      "width": "hug"
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "stack",
+                      "repeat": {
+                        "for": "row",
+                        "in": "$legend"
+                      },
+                      "props": {
+                        "axis": "x",
+                        "gap": 9,
+                        "align": "center",
+                        "size": {
+                          "width": "hug"
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "props": {
+                            "size": 11,
+                            "fill": {
+                              "$": "row.color"
+                            }
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "props": {
+                            "value": {
+                              "$": "row.label"
+                            },
+                            "style": "callout",
+                            "color": "label"
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "props": {
+                            "value": {
+                              "$": "row.value"
+                            },
+                            "style": {
+                              "style": "callout",
+                              "weight": "semibold",
+                              "tabular": true
+                            },
+                            "color": "secondary"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "y",
+            "gap": 16,
+            "padding": 20,
+            "size": {
+              "width": "fill",
+              "height": "hug"
+            },
+            "radius": 18,
+            "fill": "window",
+            "stroke": {
+              "color": "separator",
+              "width": 1,
+              "align": "inside"
+            },
+            "shadow": {
+              "color": "#14000000",
+              "blur": 14,
+              "dy": 4
+            }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": "HOURS LISTENED",
+                "style": {
+                  "style": "caption",
+                  "weight": "bold"
+                },
+                "color": "tertiary"
+              }
+            },
+            {
+              "type": "layer",
+              "props": {
+                "size": {
+                  "width": 362.0,
+                  "height": 96
+                }
+              },
+              "children": [
+                {
+                  "type": "path",
+                  "props": {
+                    "size": {
+                      "width": 362.0,
+                      "height": 96
+                    },
+                    "commands": [
+                      {
+                        "move": [
+                          0.0,
+                          96
+                        ]
+                      },
+                      {
+                        "line": [
+                          0.0,
+                          86.2
+                        ]
+                      },
+                      {
+                        "line": [
+                          32.9,
+                          73.0
+                        ]
+                      },
+                      {
+                        "line": [
+                          65.9,
+                          79.6
+                        ]
+                      },
+                      {
+                        "line": [
+                          98.7,
+                          58.3
+                        ]
+                      },
+                      {
+                        "line": [
+                          131.6,
+                          64.8
+                        ]
+                      },
+                      {
+                        "line": [
+                          164.5,
+                          43.5
+                        ]
+                      },
+                      {
+                        "line": [
+                          197.5,
+                          53.4
+                        ]
+                      },
+                      {
+                        "line": [
+                          230.4,
+                          32.0
+                        ]
+                      },
+                      {
+                        "line": [
+                          263.3,
+                          46.8
+                        ]
+                      },
+                      {
+                        "line": [
+                          296.1,
+                          25.5
+                        ]
+                      },
+                      {
+                        "line": [
+                          329.1,
+                          38.6
+                        ]
+                      },
+                      {
+                        "line": [
+                          362.0,
+                          18.9
+                        ]
+                      },
+                      {
+                        "line": [
+                          362.0,
+                          96
+                        ]
+                      },
+                      {
+                        "close": true
+                      }
+                    ],
+                    "fill": {
+                      "hex": "#FF1E88C7",
+                      "opacity": 0.16
+                    }
+                  }
+                },
+                {
+                  "type": "path",
+                  "props": {
+                    "size": {
+                      "width": 362.0,
+                      "height": 96
+                    },
+                    "points": [
+                      [
+                        0.0,
+                        86.2
+                      ],
+                      [
+                        32.9,
+                        73.0
+                      ],
+                      [
+                        65.9,
+                        79.6
+                      ],
+                      [
+                        98.7,
+                        58.3
+                      ],
+                      [
+                        131.6,
+                        64.8
+                      ],
+                      [
+                        164.5,
+                        43.5
+                      ],
+                      [
+                        197.5,
+                        53.4
+                      ],
+                      [
+                        230.4,
+                        32.0
+                      ],
+                      [
+                        263.3,
+                        46.8
+                      ],
+                      [
+                        296.1,
+                        25.5
+                      ],
+                      [
+                        329.1,
+                        38.6
+                      ],
+                      [
+                        362.0,
+                        18.9
+                      ]
+                    ],
+                    "stroke": {
+                      "color": "#FF1E88C7",
+                      "width": 2.6,
+                      "cap": "round",
+                      "join": "round"
+                    }
+                  }
+                },
+                {
+                  "type": "ellipse",
+                  "props": {
+                    "place": {
+                      "left": 357.0,
+                      "top": 13.899999999999999
+                    },
+                    "size": 10,
+                    "fill": "#FF1E88C7",
+                    "stroke": {
+                      "color": "#FFFFFFFF",
+                      "width": 2.5
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
