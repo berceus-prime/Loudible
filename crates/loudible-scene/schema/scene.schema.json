@@ -1,0 +1,740 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loudible.app/scene.schema.json",
+  "title": "Loudible scene",
+  "type": "object",
+  "required": ["schema", "root"],
+  "additionalProperties": false,
+  "properties": {
+    "$comment": { "type": "string" },
+    "schema": { "const": "loudible.scene/1" },
+    "tokens": { "$ref": "#/$defs/tokens" },
+    "symbols": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/symbol" }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/component" }
+    },
+    "root": { "$ref": "#/$defs/node" }
+  },
+
+  "$defs": {
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$comment": { "type": "string" },
+        "colors": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "$ref": "#/$defs/hex" },
+              {
+                "type": "object",
+                "required": ["light", "dark"],
+                "additionalProperties": false,
+                "properties": {
+                  "light": { "$ref": "#/$defs/hex" },
+                  "dark": { "$ref": "#/$defs/hex" }
+                }
+              }
+            ]
+          }
+        },
+        "text": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/textStyleLiteral" }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+
+    "hex": { "type": "string", "pattern": "^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$" },
+
+    "symbol": {
+      "type": "object",
+      "required": ["children"],
+      "additionalProperties": false,
+      "properties": {
+        "$comment": { "type": "string" },
+        "grid": { "type": "number", "default": 24 },
+        "props": { "$ref": "#/$defs/props" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+      }
+    },
+
+    "component": {
+      "type": "object",
+      "required": ["body"],
+      "additionalProperties": false,
+      "properties": {
+        "$comment": { "type": "string" },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "type": {
+                "enum": ["string", "number", "bool", "object", "array", "color", "node"]
+              },
+              "default": true
+            }
+          }
+        },
+        "body": { "$ref": "#/$defs/node" }
+      }
+    },
+
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "$comment": { "type": "string" },
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "when": { "$ref": "#/$defs/condition" },
+        "repeat": {
+          "type": "object",
+          "required": ["for", "in"],
+          "additionalProperties": false,
+          "properties": {
+            "for": { "type": "string" },
+            "in": { "type": "string" },
+            "index": { "type": "string" }
+          }
+        },
+        "props": { "$ref": "#/$defs/props" },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["when", "props"],
+            "additionalProperties": false,
+            "properties": {
+              "when": { "$ref": "#/$defs/condition" },
+              "props": { "$ref": "#/$defs/props" }
+            }
+          }
+        },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "stack" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/stackProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "bar" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/barProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "grid" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/gridProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "scroll" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/scrollProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "viewport" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/viewportProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "text" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/textProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "field" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/fieldProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "symbol" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/symbolProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "image" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/imageProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "arc" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/arcProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "path" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/pathProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "line" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/lineProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "spinner" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/spinnerProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "spacer" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/spacerProps" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "host" } }, "required": ["type"] },
+          "then": { "properties": { "props": { "$ref": "#/$defs/hostProps" } } }
+        }
+      ]
+    },
+
+    "props": {
+      "type": "object",
+      "$comment": "Box properties, legal on every node. Per-type props extend this.",
+      "properties": {
+        "size": { "$ref": "#/$defs/size" },
+        "place": { "$ref": "#/$defs/place" },
+        "anchor": { "$ref": "#/$defs/anchor" },
+        "padding": { "$ref": "#/$defs/edges" },
+        "margin": { "$ref": "#/$defs/edges" },
+        "align_self": { "$ref": "#/$defs/align" },
+        "slot": { "enum": ["leading", "center", "trailing"] },
+        "grow": { "type": "number" },
+        "fill": { "$ref": "#/$defs/color" },
+        "color": { "$ref": "#/$defs/color" },
+        "stroke": { "$ref": "#/$defs/stroke" },
+        "radius": { "$ref": "#/$defs/radius" },
+        "radius_rule": { "enum": ["fixed", "control"] },
+        "inset": { "$ref": "#/$defs/edges" },
+        "shadow": {
+          "oneOf": [
+            { "$ref": "#/$defs/shadow" },
+            { "type": "array", "items": { "$ref": "#/$defs/shadow" } }
+          ]
+        },
+        "material": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "blur": { "type": "number", "default": 24 },
+            "tint": { "$ref": "#/$defs/color" }
+          }
+        },
+        "opacity": { "$ref": "#/$defs/number" },
+        "blend": { "enum": ["src-over", "dst-out"] },
+        "isolate": { "type": "boolean" },
+        "clip": { "type": "boolean" },
+        "hit": { "$ref": "#/$defs/hit" },
+        "z": { "type": "number" }
+      }
+    },
+
+    "stackProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "axis": { "enum": ["x", "y"], "default": "y" },
+        "gap": { "type": "number" },
+        "align": { "$ref": "#/$defs/align" },
+        "justify": { "enum": ["start", "center", "end", "space-between"] },
+        "wrap": { "type": "boolean" }
+      }
+    },
+
+    "barProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "$comment": "Children carry slot: leading | center | trailing.",
+      "properties": {
+        "gap": { "type": "number" },
+        "align": { "$ref": "#/$defs/align", "default": "center" }
+      }
+    },
+
+    "gridProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["min_cell"],
+      "properties": {
+        "min_cell": { "type": "number" },
+        "gap": { "type": "number" },
+        "row_gap": { "type": "number" },
+        "cell_ratio": { "type": "number" }
+      }
+    },
+
+    "scrollProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "axis": { "enum": ["x", "y"], "default": "y" },
+        "offset": { "$ref": "#/$defs/number" },
+        "scrollbar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": { "type": "number", "default": 6 },
+            "inset": { "type": "number", "default": 2 },
+            "min_length": { "type": "number", "default": 32 },
+            "color": { "$ref": "#/$defs/color" },
+            "opacity": { "$ref": "#/$defs/number" }
+          }
+        }
+      }
+    },
+
+    "viewportProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "content": { "$ref": "#/$defs/size" },
+        "origin": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "x": { "$ref": "#/$defs/number" }, "y": { "$ref": "#/$defs/number" } }
+        },
+        "background": { "$ref": "#/$defs/color" }
+      }
+    },
+
+    "textProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["value"],
+      "properties": {
+        "value": { "$ref": "#/$defs/string" },
+        "style": { "$ref": "#/$defs/textStyle" },
+        "color": { "$ref": "#/$defs/color" },
+        "align": { "$ref": "#/$defs/align", "default": "leading" },
+        "wrap": { "type": "boolean", "default": false },
+        "max_lines": { "type": "integer", "minimum": 1 },
+        "truncate": { "enum": ["none", "ellipsis"], "default": "none" },
+        "limit": { "type": "number" }
+      }
+    },
+
+    "fieldProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["binding"],
+      "properties": {
+        "binding": { "type": "string" },
+        "placeholder": { "$ref": "#/$defs/string" },
+        "placeholder_color": { "$ref": "#/$defs/color" },
+        "style": { "$ref": "#/$defs/textStyle" },
+        "color": { "$ref": "#/$defs/color" },
+        "selection_color": { "$ref": "#/$defs/color" },
+        "caret_color": { "$ref": "#/$defs/color" },
+        "caret_blink_ms": { "type": "number", "default": 600 }
+      }
+    },
+
+    "symbolProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/string" },
+        "color": { "$ref": "#/$defs/color" }
+      }
+    },
+
+    "imageProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "source": { "$ref": "#/$defs/string" },
+        "fit": { "enum": ["cover", "contain", "fill"], "default": "cover" },
+        "sampling": { "enum": ["linear", "nearest", "mipmap"], "default": "linear" }
+      }
+    },
+
+    "arcProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "start_deg": { "type": "number", "default": -90 },
+        "sweep_deg": { "$ref": "#/$defs/number" },
+        "progress": { "$ref": "#/$defs/number" },
+        "min_progress": { "type": "number", "default": 0.02 },
+        "stroke": { "$ref": "#/$defs/stroke" },
+        "track": { "$ref": "#/$defs/stroke" }
+      }
+    },
+
+    "pathProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "grid": { "type": "number" },
+        "points": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/point" },
+          "minItems": 2
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["move"],
+                "additionalProperties": false,
+                "properties": { "move": { "$ref": "#/$defs/point" } }
+              },
+              {
+                "type": "object",
+                "required": ["line"],
+                "additionalProperties": false,
+                "properties": { "line": { "$ref": "#/$defs/point" } }
+              },
+              {
+                "type": "object",
+                "required": ["cubic"],
+                "additionalProperties": false,
+                "properties": {
+                  "cubic": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/point" },
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["close"],
+                "additionalProperties": false,
+                "properties": { "close": { "const": true } }
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    "lineProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "$ref": "#/$defs/point" },
+        "to": { "$ref": "#/$defs/point" },
+        "stroke": { "$ref": "#/$defs/stroke" }
+      }
+    },
+
+    "spinnerProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "spokes": { "type": "integer", "default": 12 },
+        "period_ms": { "type": "number", "default": 1000 }
+      }
+    },
+
+    "spacerProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "properties": { "grow": { "type": "number", "default": 1 } }
+    },
+
+    "hostProps": {
+      "allOf": [{ "$ref": "#/$defs/props" }],
+      "required": ["name"],
+      "properties": { "name": { "type": "string" } }
+    },
+
+    "size": {
+      "oneOf": [
+        { "$comment": "A square box.", "$ref": "#/$defs/number" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": { "$ref": "#/$defs/dimension" },
+            "height": { "$ref": "#/$defs/dimension" }
+          }
+        }
+      ]
+    },
+
+    "dimension": {
+      "oneOf": [
+        { "$ref": "#/$defs/number" },
+        { "enum": ["hug", "fill"] },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fixed": { "$ref": "#/$defs/number" },
+            "hug": { "const": true },
+            "fill": {
+              "oneOf": [
+                { "const": true },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": { "min": { "type": "number" }, "max": { "type": "number" } }
+                }
+              ]
+            },
+            "fraction": { "type": "number" },
+            "ratio": { "type": "number" },
+            "text": { "$ref": "#/$defs/string" },
+            "style": { "$ref": "#/$defs/textStyle" },
+            "plus": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        }
+      ]
+    },
+
+    "align": {
+      "$comment": "leading and trailing are accepted as start and end, so one enum serves stacks, bars, text and anchors.",
+      "enum": ["start", "center", "end", "stretch", "leading", "trailing"]
+    },
+
+    "place": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": { "type": "number" },
+        "right": { "type": "number" },
+        "top": { "type": "number" },
+        "bottom": { "type": "number" },
+        "center_x": { "type": "number" },
+        "center_y": { "type": "number" }
+      }
+    },
+
+    "anchor": {
+      "type": "object",
+      "$comment": "Overlay placement: keep inside the window, flipping across the anchor if needed.",
+      "additionalProperties": false,
+      "properties": {
+        "to": { "$ref": "#/$defs/point" },
+        "align": { "$ref": "#/$defs/align", "default": "leading" },
+        "flip": { "type": "boolean", "default": true },
+        "margin": { "type": "number", "default": 8 }
+      }
+    },
+
+    "edges": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 4
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": { "type": "number" },
+            "right": { "type": "number" },
+            "bottom": { "type": "number" },
+            "left": { "type": "number" }
+          }
+        }
+      ]
+    },
+
+    "radius": {
+      "oneOf": [
+        { "type": "number" },
+        { "const": "capsule" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tl": { "type": "number" },
+            "tr": { "type": "number" },
+            "br": { "type": "number" },
+            "bl": { "type": "number" }
+          }
+        }
+      ]
+    },
+
+    "color": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "token": { "type": "string" },
+            "hex": { "$ref": "#/$defs/hex" },
+            "opacity": { "$ref": "#/$defs/number" },
+            "$": { "type": "string" },
+            "mix": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "prefixItems": [
+                { "$ref": "#/$defs/color" },
+                { "$ref": "#/$defs/color" },
+                { "type": "number" }
+              ]
+            },
+            "gradient": { "$ref": "#/$defs/gradient" }
+          }
+        }
+      ]
+    },
+
+    "gradient": {
+      "type": "object",
+      "required": ["stops"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "linear", "default": "linear" },
+        "from": { "enum": ["top", "left", "top-left"], "default": "top" },
+        "to": { "enum": ["bottom", "right", "bottom-right"], "default": "bottom" },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/color" }
+        }
+      }
+    },
+
+    "stroke": {
+      "type": "object",
+      "required": ["color"],
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "width": { "type": "number", "default": 1 },
+        "align": { "enum": ["center", "inside", "outside"], "default": "center" },
+        "cap": { "enum": ["butt", "round", "square"], "default": "butt" },
+        "join": { "enum": ["miter", "round", "bevel"], "default": "miter" }
+      }
+    },
+
+    "shadow": {
+      "type": "object",
+      "required": ["color"],
+      "additionalProperties": false,
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "blur": { "type": "number", "default": 0 },
+        "dx": { "type": "number", "default": 0 },
+        "dy": { "type": "number", "default": 0 },
+        "knockout": { "type": "boolean", "default": true }
+      }
+    },
+
+    "textStyle": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "style": { "type": "string" },
+            "size": { "$ref": "#/$defs/number" },
+            "line": { "$ref": "#/$defs/number" },
+            "weight": { "enum": ["regular", "medium", "semibold", "bold"] },
+            "rounded": { "type": "boolean" },
+            "tabular": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+
+    "textStyleLiteral": {
+      "type": "object",
+      "required": ["size", "line"],
+      "additionalProperties": false,
+      "properties": {
+        "size": { "type": "number" },
+        "line": { "type": "number" },
+        "weight": { "enum": ["regular", "medium", "semibold", "bold"] },
+        "rounded": { "type": "boolean" },
+        "tabular": { "type": "boolean" }
+      }
+    },
+
+    "point": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "x": { "$ref": "#/$defs/number" },
+            "y": { "$ref": "#/$defs/number" },
+            "$": { "type": "string" }
+          }
+        }
+      ]
+    },
+
+    "hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action": { "type": "string" },
+        "args": { "type": "object" },
+        "secondary": { "type": "string" },
+        "secondary_args": { "type": "object" },
+        "tooltip": { "$ref": "#/$defs/string" },
+        "text_cursor": { "type": "boolean", "default": false },
+        "blocks": { "type": "boolean", "default": false }
+      }
+    },
+
+    "condition": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "boolean" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "not": { "$ref": "#/$defs/condition" },
+            "all": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+            "any": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+            "eq": { "type": "array", "minItems": 2, "maxItems": 2 },
+            "gt": { "type": "array", "minItems": 2, "maxItems": 2 },
+            "empty": { "type": "string" }
+          }
+        }
+      ]
+    },
+
+    "string": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "$": { "type": "string" },
+            "else": { "type": "string" },
+            "format": { "type": "string" },
+            "count": { "type": "string" },
+            "zero": { "type": "string" },
+            "one": { "type": "string" },
+            "many": { "type": "string" }
+          }
+        }
+      ]
+    },
+
+    "number": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "object",
+          "required": ["$"],
+          "additionalProperties": false,
+          "properties": {
+            "$": { "type": "string" },
+            "else": { "type": "number" }
+          }
+        }
+      ]
+    }
+  }
+}

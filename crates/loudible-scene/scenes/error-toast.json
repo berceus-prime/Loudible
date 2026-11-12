@@ -1,0 +1,134 @@
+{
+  "$comment": "src/views/error_toast.rs. Height comes from the content, so there is no measure pass.",
+  "type": "stack",
+  "props": {
+    "axis": "x",
+    "gap": 12,
+    "align": "start",
+    "size": { "width": { "fill": { "max": 440 } }, "height": "hug" },
+    "padding": 16,
+    "radius": 12,
+    "material": { "blur": 24, "tint": "material" },
+    "stroke": { "color": "material_rim", "width": 1, "align": "inside" },
+    "shadow": { "color": "#1F000000", "blur": 12, "dy": 4 },
+    "hit": { "blocks": true }
+  },
+  "children": [
+    {
+      "type": "symbol",
+      "props": { "name": "error.fill", "size": 18.5, "color": "red" }
+    },
+    {
+      "type": "stack",
+      "props": { "axis": "y", "grow": 1, "size": { "width": "fill", "height": "hug" } },
+      "children": [
+        {
+          "type": "text",
+          "props": {
+            "value": { "$": "error.title" },
+            "style": "headline",
+            "color": "on_material",
+            "wrap": true,
+            "margin": { "bottom": 8 }
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "value": { "$": "error.detail" },
+            "style": "callout",
+            "color": "secondary",
+            "wrap": true,
+            "margin": { "bottom": 8 }
+          }
+        },
+        {
+          "$comment": "Disclosure row. Only the label and chevron are clickable, 60pt wide.",
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 3,
+            "align": "center",
+            "size": { "width": 60, "height": 22 },
+            "hit": { "action": "toggle-toast-details", "args": { "id": { "$": "id" } } }
+          },
+          "children": [
+            {
+              "type": "symbol",
+              "props": { "name": "chevron.right", "size": 9, "color": "tertiary" },
+              "variants": [{ "when": "shows_details", "props": { "name": "chevron.down" } }]
+            },
+            { "type": "text", "props": { "value": "Details", "style": "callout", "color": "on_material" } }
+          ]
+        },
+        {
+          "type": "box",
+          "when": "shows_details",
+          "props": {
+            "size": { "width": "fill", "height": { "hug": true, "max": 140 } },
+            "clip": true,
+            "margin": { "bottom": 8 }
+          },
+          "children": [
+            {
+              "type": "text",
+              "props": {
+                "value": { "$": "error.technical" },
+                "style": "caption",
+                "color": "on_material",
+                "wrap": true
+              }
+            }
+          ]
+        },
+        { "type": "spacer", "when": { "not": "shows_details" }, "props": { "size": { "height": 8 } } },
+        {
+          "type": "stack",
+          "props": {
+            "axis": "x",
+            "gap": 7,
+            "align": "center",
+            "size": { "width": "hug", "height": 22 },
+            "padding": { "left": 9.5, "right": 10 },
+            "radius": 7,
+            "fill": "toast_button",
+            "color": "on_material",
+            "shadow": { "color": "#14000000", "blur": 6, "dy": 0 },
+            "hit": {
+              "action": "copy-toast",
+              "args": { "id": { "$": "id" } },
+              "tooltip": "Copy the full technical error to the clipboard"
+            }
+          },
+          "variants": [{ "when": "pressed", "props": { "fill": "control_pressed" } }],
+          "children": [
+            {
+              "type": "symbol",
+              "props": { "name": "doc.on.doc", "size": 15 },
+              "variants": [{ "when": "is_copied", "props": { "name": "check" } }]
+            },
+            {
+              "type": "text",
+              "props": { "value": "Copy Details", "style": { "size": 11, "line": 14, "weight": "regular" } },
+              "variants": [{ "when": "is_copied", "props": { "value": "Copied" } }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "layer",
+      "props": {
+        "size": { "width": 24, "height": 24 },
+        "align_self": "start",
+        "hit": { "action": "dismiss-toast", "args": { "id": { "$": "id" } }, "tooltip": "Dismiss error" }
+      },
+      "children": [
+        {
+          "type": "symbol",
+          "props": { "name": "xmark", "size": 11, "color": "secondary", "place": { "center_x": 0, "center_y": 0 } }
+        }
+      ]
+    }
+  ]
+}

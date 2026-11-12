@@ -1,0 +1,11 @@
+{
+  "$render": { "size": [480, 240], "scale": 2 },
+  "id": 7,
+  "error": {
+    "title": "Could not export The Long Way to a Small, Angry Planet",
+    "detail": "FFmpeg stopped before it finished writing the file. Check that there is room on the disk and try again.",
+    "technical": "ffmpeg exited with status 1: Output file #0 does not contain any stream"
+  },
+  "shows_details": false,
+  "is_copied": false
+}

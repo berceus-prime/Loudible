@@ -1,0 +1,28 @@
+{
+  "$render": { "size": [180, 220], "scale": 3 },
+  "props": {
+    "book": {
+      "asin": "B0036FLXLQ",
+      "title": "The Long Way to a Small, Angry Planet",
+      "authors_text": "Becky Chambers",
+      "cover": "#FF6E7CF7",
+      "cover_url": null,
+      "runtime_text": "14 hrs 20 min",
+      "tooltip": "The Long Way to a Small, Angry Planet"
+    },
+    "state": {
+      "is_selected": false,
+      "is_in_library": true,
+      "marketplace_badge": null,
+      "menu_items": ["download", "export"],
+      "status": {
+        "kind": "running",
+        "shows_badge": true,
+        "progress": 0.4,
+        "job": "download",
+        "transferred": null
+      }
+    },
+    "selectable": true
+  }
+}

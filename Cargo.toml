@@ -5,6 +5,7 @@ members = [
     "crates/loudible-core",
     "crates/loudible-ffmpeg",
     "crates/loudible-presentation",
+    "crates/loudible-scene",
     "crates/loudible-test-support",
 ]
 resolver = "3"

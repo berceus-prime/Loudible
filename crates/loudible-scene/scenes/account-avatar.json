@@ -1,0 +1,46 @@
+{
+  "$comment": "src/views/account.rs `account_avatar`: a gradient disc with the account's initial, or a person symbol when there is no name.",
+  "params": [
+    { "name": "initial", "type": "string" },
+    { "name": "size", "type": "number", "default": 24 },
+    { "name": "glyph", "type": "number", "default": 12 }
+  ],
+  "body": {
+    "type": "layer",
+    "props": {
+      "size": { "$": "size" },
+      "radius": "capsule",
+      "fill": {
+        "gradient": { "stops": ["#FFB3BFE6", "#FF8794C7"] }
+      }
+    },
+    "children": [
+      {
+        "type": "text",
+        "when": { "not": { "empty": "initial" } },
+        "props": {
+          "value": { "$": "initial" },
+          "style": {
+            "size": { "$": "glyph" },
+            "line": { "$": "glyph" },
+            "weight": "semibold",
+            "rounded": true
+          },
+          "color": "#FFFFFFFF",
+          "align": "center",
+          "place": { "center_x": 0, "center_y": 0 }
+        }
+      },
+      {
+        "type": "symbol",
+        "when": { "empty": "initial" },
+        "props": {
+          "name": "person.fill",
+          "size": { "$": "glyph" },
+          "color": "#FFFFFFFF",
+          "place": { "center_x": 0, "center_y": 0 }
+        }
+      }
+    ]
+  }
+}

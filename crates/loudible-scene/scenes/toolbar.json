@@ -1,0 +1,274 @@
+{
+  "$comment": "src/views/toolbar.rs. A bar whose centre slot is window-centred until the side slots crowd it.",
+  "type": "bar",
+  "props": {
+    "size": { "width": "fill", "height": 52 },
+    "padding": { "top": 8, "bottom": 8, "right": 8 },
+    "fill": "window",
+    "hit": { "action": "drag-window" }
+  },
+  "variants": [
+    {
+      "when": { "not": { "empty": "messages.tint" } },
+      "props": { "fill": { "$": "messages.tint" } }
+    }
+  ],
+  "children": [
+    {
+      "$comment": "macOS shares the title bar with the toolbar, so the window draws its own controls.",
+      "type": "layer",
+      "when": { "eq": ["platform", "macos"] },
+      "props": { "slot": "leading", "size": { "width": "hug", "height": "fill" } },
+      "children": [
+        {
+          "type": "ellipse",
+          "props": {
+            "place": { "left": 19, "center_y": 0 },
+            "size": 14,
+            "fill": "#FFFF5F57",
+            "stroke": { "color": "glass_rim", "width": 0.75, "align": "inside" },
+            "hit": { "action": "close-window" }
+          },
+          "variants": [
+            {
+              "when": { "not": "window_active" },
+              "props": { "fill": { "gradient": { "stops": ["#FFEAEAEC", "#FFF7F7F9"] } } }
+            }
+          ]
+        },
+        {
+          "type": "ellipse",
+          "props": {
+            "place": { "left": 42, "center_y": 0 },
+            "size": 14,
+            "fill": "#FFFEBC2E",
+            "stroke": { "color": "glass_rim", "width": 0.75, "align": "inside" },
+            "hit": { "action": "minimize-window" }
+          },
+          "variants": [
+            {
+              "when": { "not": "window_active" },
+              "props": { "fill": { "gradient": { "stops": ["#FFEAEAEC", "#FFF7F7F9"] } } }
+            }
+          ]
+        },
+        {
+          "type": "ellipse",
+          "props": {
+            "place": { "left": 65, "center_y": 0 },
+            "size": 14,
+            "fill": "#FF28C840",
+            "stroke": { "color": "glass_rim", "width": 0.75, "align": "inside" },
+            "hit": { "action": "zoom-window" }
+          },
+          "variants": [
+            {
+              "when": { "not": "window_active" },
+              "props": { "fill": { "gradient": { "stops": ["#FFEAEAEC", "#FFF7F7F9"] } } }
+            }
+          ]
+        },
+        {
+          "$comment": "Account capsule, sized to its label and capped at 200.",
+          "type": "stack",
+          "when": { "not": "signed_out_and_empty" },
+          "props": {
+            "axis": "x",
+            "gap": 8,
+            "align": "center",
+            "place": { "left": 95, "top": 0, "bottom": 0 },
+            "size": { "width": { "hug": true, "max": 200 }, "height": 36 },
+            "padding": { "left": 4, "right": 10 },
+            "radius": "capsule",
+            "fill": "glass",
+            "stroke": { "color": "glass_rim", "width": 0.75 },
+            "hit": { "action": "toggle-account", "tooltip": "Account" }
+          },
+          "variants": [
+            {
+              "when": { "not": "account.is_signed_in" },
+              "props": { "hit": { "action": "toggle-account", "tooltip": "Sign in to Audible" } }
+            }
+          ],
+          "children": [
+            {
+              "type": "account-avatar",
+              "props": { "initial": { "$": "account.initial" }, "size": 24, "glyph": 12 }
+            },
+            {
+              "type": "text",
+              "props": {
+                "value": { "$": "account.name", "else": "Account" },
+                "style": { "style": "body", "weight": "semibold" },
+                "color": "label",
+                "truncate": "ellipsis"
+              },
+              "variants": [
+                { "when": { "not": "account.is_signed_in" }, "props": { "value": "Sign In" } }
+              ]
+            },
+            {
+              "type": "symbol",
+              "when": "account.needs_reauthentication",
+              "props": { "name": "warning.fill", "size": 16, "color": "orange" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "$comment": "Search: 452 wide when it fits, never under 120, centred then clamped by the bar.",
+      "type": "stack",
+      "props": {
+        "slot": "center",
+        "axis": "x",
+        "align": "center",
+        "size": { "width": { "fill": { "min": 120, "max": 452 } }, "height": 36 },
+        "padding": { "left": 11.25, "right": 14 },
+        "gap": 7.5,
+        "radius": "capsule",
+        "fill": "glass",
+        "stroke": { "color": "glass_rim", "width": 0.75 },
+        "color": "label",
+        "hit": { "action": "focus-field", "args": { "field": "search" }, "text_cursor": true }
+      },
+      "variants": [
+        { "when": "search_focused", "props": { "stroke": { "color": "accent", "width": 2 } } },
+        {
+          "when": { "not": "search_enabled" },
+          "props": { "color": "secondary", "hit": { "blocks": true } }
+        }
+      ],
+      "children": [
+        { "type": "symbol", "props": { "name": "search", "size": 13.5 } },
+        {
+          "type": "field",
+          "props": {
+            "binding": "search",
+            "placeholder": "Search title, author, narrator",
+            "style": { "style": "body", "weight": "medium" },
+            "grow": 1
+          }
+        },
+        {
+          "type": "layer",
+          "when": { "not": { "empty": "search.text" } },
+          "props": {
+            "size": { "width": 20, "height": 20 },
+            "hit": { "action": "clear-search" }
+          },
+          "children": [
+            {
+              "type": "ellipse",
+              "props": { "place": { "center_x": 0, "center_y": 0 }, "size": { "width": 14, "height": 14 }, "fill": "tertiary" }
+            },
+            {
+              "type": "symbol",
+              "props": { "name": "xmark", "size": 7, "color": "window", "place": { "center_x": 0, "center_y": 0 } }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "$comment": "Selection actions when something is selected, then refresh. One glass capsule around the group.",
+      "type": "stack",
+      "props": {
+        "slot": "trailing",
+        "axis": "x",
+        "gap": 17,
+        "align": "center",
+        "size": { "width": "hug", "height": 36 },
+        "padding": { "left": 10, "right": 1.5 },
+        "radius": "capsule",
+        "fill": "glass",
+        "stroke": { "color": "glass_rim", "width": 0.75 },
+        "color": "label"
+      },
+      "variants": [
+        { "when": { "not": "window_active" }, "props": { "color": "secondary" } }
+      ],
+      "children": [
+        {
+          "type": "stack",
+          "when": { "gt": ["selection.count", 0] },
+          "props": {
+            "axis": "x",
+            "gap": 8,
+            "align": "center",
+            "padding": { "left": 6, "right": 12 },
+            "hit": {
+              "action": "on-selection",
+              "args": { "book_action": "download" },
+              "tooltip": { "count": "selection.downloads", "zero": "None of the selected books can be downloaded", "one": "Download 1 book", "many": "Download {n} books" }
+            }
+          },
+          "variants": [
+            {
+              "when": { "eq": ["selection.downloads", 0] },
+              "props": { "color": "tertiary", "hit": { "blocks": true } }
+            }
+          ],
+          "children": [
+            { "type": "symbol", "props": { "name": "arrow.down.circle", "size": 18 } },
+            { "type": "text", "props": { "value": "Download", "style": { "style": "body", "weight": "medium" } } }
+          ]
+        },
+        {
+          "type": "stack",
+          "when": { "gt": ["selection.count", 0] },
+          "props": {
+            "axis": "x",
+            "gap": 8,
+            "align": "center",
+            "padding": { "left": 6, "right": 12 },
+            "hit": {
+              "action": "on-selection",
+              "args": { "book_action": "export" },
+              "tooltip": { "count": "selection.exports", "zero": "None of the selected books can be exported", "one": "Export to M4B 1 book", "many": "Export to M4B {n} books" }
+            }
+          },
+          "variants": [
+            {
+              "when": { "eq": ["selection.exports", 0] },
+              "props": { "color": "tertiary", "hit": { "blocks": true } }
+            }
+          ],
+          "children": [
+            { "type": "symbol", "props": { "name": "share", "size": 18 } },
+            { "type": "text", "props": { "value": "Export", "style": { "style": "body", "weight": "medium" } } }
+          ]
+        },
+        {
+          "type": "layer",
+          "props": {
+            "size": { "width": 36, "height": 36 },
+            "hit": { "action": "refresh", "tooltip": "Refresh library" }
+          },
+          "variants": [
+            {
+              "when": { "any": ["is_busy", { "not": "can_refresh" }] },
+              "props": { "color": "tertiary", "hit": { "blocks": true } }
+            },
+            {
+              "when": "checking_marketplaces",
+              "props": { "hit": { "blocks": true, "tooltip": "Checking other Audible marketplaces for more titles…" } }
+            }
+          ],
+          "children": [
+            {
+              "type": "symbol",
+              "when": { "not": "is_busy" },
+              "props": { "name": "refresh", "size": 19, "place": { "center_x": 0, "center_y": 0 } }
+            },
+            {
+              "type": "spinner",
+              "when": "is_busy",
+              "props": { "size": 15, "color": "label", "place": { "center_x": 0, "center_y": 0 } }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[package]
+name = "loudible-scene"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+skia-safe = { version = "0.157", features = ["textlayout"] }
+
+[features]
+# Stub ports and pixel probes, for this crate's tests and its `render` example.
+testing = []
+
+[dev-dependencies]
+loudible-scene = { path = ".", features = ["testing"] }
+
+[[example]]
+name = "render"
+required-features = ["testing"]

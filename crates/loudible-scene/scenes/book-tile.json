@@ -1,0 +1,300 @@
+{
+  "$comment": "src/views/book_tile.rs transcribed. A component: one cover, its badges, the title block and the actions menu.",
+  "params": [
+    { "name": "book", "type": "object" },
+    { "name": "state", "type": "object" },
+    { "name": "selectable", "type": "bool", "default": true }
+  ],
+  "body": {
+    "type": "stack",
+    "props": {
+      "axis": "y",
+      "size": { "width": "fill", "height": "hug" },
+      "hit": {
+        "action": "toggle-book",
+        "args": { "asin": { "$": "book.asin" } },
+        "secondary": "open-book-menu",
+        "tooltip": { "$": "book.tooltip" }
+      }
+    },
+    "variants": [
+      {
+        "when": { "not": "selectable" },
+        "props": { "opacity": 0.5, "hit": { "blocks": true } }
+      }
+    ],
+    "children": [
+      {
+        "type": "layer",
+        "id": "cover",
+        "props": {
+          "size": { "width": "fill", "height": { "ratio": 1.0 } },
+          "radius": 6,
+          "clip": true,
+          "shadow": { "color": "#26000000", "blur": 3, "dy": 1 },
+          "stroke": { "color": "cover_rim", "width": 1, "align": "inside" }
+        },
+        "variants": [
+          {
+            "when": "state.is_selected",
+            "props": { "stroke": { "color": "accent", "width": 3, "align": "inside" } }
+          }
+        ],
+        "children": [
+          {
+            "type": "image",
+            "props": {
+              "source": { "$": "book.cover_url" },
+              "fit": "cover",
+              "place": { "left": 0, "right": 0, "top": 0, "bottom": 0 }
+            },
+            "children": [
+              {
+                "$comment": "Synthetic cover: the book's own colour with a lightened stripe at 30%.",
+                "type": "stack",
+                "when": { "not": { "empty": "book.cover" } },
+                "props": {
+                  "axis": "y",
+                  "place": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                  "fill": { "$": "book.cover" }
+                },
+                "children": [
+                  { "type": "spacer", "props": { "size": { "height": { "fraction": 0.3 } } } },
+                  {
+                    "type": "box",
+                    "props": {
+                      "size": { "width": "fill", "height": { "fraction": 0.08 } },
+                      "fill": { "mix": [{ "$": "book.cover" }, "#FFFFFFFF", 0.35] }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "layer",
+                "when": { "empty": "book.cover" },
+                "props": {
+                  "place": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                  "fill": "placeholder_fill"
+                },
+                "children": [
+                  {
+                    "type": "symbol",
+                    "props": {
+                      "name": "book.closed",
+                      "size": 30,
+                      "color": "secondary",
+                      "place": { "center_x": 0, "center_y": 0 }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$comment": "Marketplace code, top left.",
+            "type": "box",
+            "when": { "not": { "empty": "state.marketplace_badge" } },
+            "props": {
+              "place": { "left": 6, "top": 6 },
+              "size": { "width": "hug", "height": 17 },
+              "padding": { "left": 5, "right": 5 },
+              "radius": "capsule",
+              "fill": "#99000000"
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": { "$": "state.marketplace_badge" },
+                  "style": { "size": 10, "line": 13, "weight": "bold", "rounded": true },
+                  "color": "#FFFFFFFF",
+                  "place": { "left": 0, "top": 2 }
+                }
+              }
+            ]
+          },
+          {
+            "$comment": "Selection check, top right: a white disc under the symbol so its hole reads.",
+            "type": "layer",
+            "when": "state.is_selected",
+            "props": {
+              "place": { "right": 6, "top": 6 },
+              "size": { "width": 18, "height": 18 }
+            },
+            "children": [
+              {
+                "type": "ellipse",
+                "props": {
+                  "place": { "center_x": 0, "center_y": 0 },
+                  "size": { "width": 14, "height": 14 },
+                  "fill": "#FFFFFFFF",
+                  "shadow": { "color": "#26000000", "blur": 3, "dy": 1 }
+                }
+              },
+              {
+                "type": "symbol",
+                "props": {
+                  "name": "check.circle.fill",
+                  "size": 17.5,
+                  "color": "accent",
+                  "place": { "center_x": 0, "center_y": 0 }
+                }
+              }
+            ]
+          },
+          {
+            "$comment": "Status badge, bottom right.",
+            "type": "layer",
+            "when": "state.status.shows_badge",
+            "props": {
+              "place": { "right": 6, "bottom": 6 },
+              "size": { "width": 26, "height": 26 },
+              "radius": "capsule",
+              "fill": "#99000000"
+            },
+            "children": [
+              {
+                "type": "symbol",
+                "when": { "eq": ["state.status.kind", "queued"] },
+                "props": { "name": "clock", "size": 15, "color": "#FFFFFFFF", "place": { "center_x": 0, "center_y": 0 } }
+              },
+              {
+                "type": "symbol",
+                "when": { "eq": ["state.status.kind", "downloaded"] },
+                "props": { "name": "arrow.down.circle.fill", "size": 16, "color": "#FFFFFFFF", "place": { "center_x": 0, "center_y": 0 } }
+              },
+              {
+                "type": "arc",
+                "when": { "eq": ["state.status.kind", "running"] },
+                "props": {
+                  "place": { "center_x": 0, "center_y": 0 },
+                  "size": { "width": 13.5, "height": 13.5 },
+                  "start_deg": -90,
+                  "progress": { "$": "state.status.progress" },
+                  "min_progress": 0.02,
+                  "track": { "color": "#40FFFFFF", "width": 2.5 },
+                  "stroke": { "color": "#FFFFFFFF", "width": 2.5, "cap": "round" }
+                },
+                "variants": [
+                  {
+                    "when": { "eq": ["state.status.job", "export"] },
+                    "props": { "stroke": { "color": "accent", "width": 2.5, "cap": "round" } }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "$comment": "Title block and the three-dot menu, in a row 13pt apart.",
+        "type": "stack",
+        "props": {
+          "axis": "x",
+          "gap": 4,
+          "align": "start",
+          "margin": { "top": 6 },
+          "size": { "width": "fill", "height": "hug" }
+        },
+        "children": [
+          {
+            "type": "stack",
+            "props": {
+              "axis": "y",
+              "grow": 1,
+              "size": { "width": "fill", "height": "hug" },
+              "hit": {
+                "action": "toggle-book",
+                "args": { "asin": { "$": "book.asin" } },
+                "secondary": "open-book-menu",
+                "tooltip": { "$": "book.tooltip" }
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "props": {
+                  "value": { "$": "book.title" },
+                  "style": { "style": "callout", "weight": "medium" },
+                  "color": "label",
+                  "wrap": true,
+                  "max_lines": 2,
+                  "truncate": "ellipsis"
+                }
+              },
+              {
+                "type": "text",
+                "props": {
+                  "value": { "$": "book.authors_text" },
+                  "style": "caption",
+                  "color": "secondary",
+                  "truncate": "ellipsis",
+                  "margin": { "top": 2 }
+                }
+              },
+              {
+                "type": "text",
+                "when": { "not": "state.is_in_library" },
+                "props": {
+                  "value": "Not in library",
+                  "style": "caption",
+                  "color": "orange",
+                  "margin": { "top": 2 }
+                }
+              },
+              {
+                "type": "text",
+                "when": { "not": { "empty": "state.status.transferred" } },
+                "props": {
+                  "value": { "$": "state.status.transferred" },
+                  "style": { "style": "caption", "weight": "medium", "tabular": true },
+                  "color": "secondary",
+                  "margin": { "top": 2 }
+                }
+              },
+              {
+                "type": "text",
+                "when": { "all": [{ "empty": "state.status.transferred" }, { "not": { "empty": "book.runtime_text" } }] },
+                "props": {
+                  "value": { "$": "book.runtime_text" },
+                  "style": "caption",
+                  "color": "tertiary",
+                  "margin": { "top": 2 }
+                }
+              }
+            ]
+          },
+          {
+            "type": "stack",
+            "props": {
+              "axis": "y",
+              "gap": 2.3,
+              "align": "center",
+              "size": { "width": 13, "height": 20 },
+              "padding": { "top": 6.9 },
+              "color": "tertiary"
+            },
+            "variants": [
+              {
+                "when": { "not": { "empty": "state.menu_items" } },
+                "props": {
+                  "color": "label",
+                  "hit": {
+                    "action": "open-book-menu",
+                    "args": { "asin": { "$": "book.asin" } },
+                    "tooltip": "More actions"
+                  }
+                }
+              }
+            ],
+            "children": [
+              { "type": "ellipse", "props": { "size": { "width": 3.2, "height": 3.2 } } },
+              { "type": "ellipse", "props": { "size": { "width": 3.2, "height": 3.2 } } },
+              { "type": "ellipse", "props": { "size": { "width": 3.2, "height": 3.2 } } }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

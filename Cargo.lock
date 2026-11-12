@@ -2423,6 +2423,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "loudible-scene"
+version = "0.1.0"
+dependencies = [
+ "loudible-scene",
+ "serde",
+ "serde_json",
+ "skia-safe",
+]
+
+[[package]]
 name = "loudible-test-support"
 version = "0.1.0"
 dependencies = [

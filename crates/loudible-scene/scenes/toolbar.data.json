@@ -1,0 +1,18 @@
+{
+  "$render": { "size": [1100, 52], "scale": 2 },
+  "account": {
+    "name": "Ada Lovelace",
+    "initial": "A",
+    "is_signed_in": true,
+    "needs_reauthentication": false
+  },
+  "search": { "text": "" },
+  "search_focused": false,
+  "search_enabled": true,
+  "selection": { "count": 2, "downloads": 2, "exports": 0 },
+  "is_busy": false,
+  "can_refresh": true,
+  "checking_marketplaces": false,
+  "signed_out_and_empty": false,
+  "messages": { "tint": null }
+}
