@@ -1,0 +1,9 @@
+# Rust 1.93 changed this target's unwinding ABI from JS exceptions to wasm exceptions, and passes
+# `-fwasm-exceptions` to the linker. The prebuilt Skia archives are compiled the other way:
+# libpng, libjpeg and FreeType all use setjmp, which emcc lowers to emscripten-style trampolines,
+# and emcc refuses that combination ("SUPPORT_LONGJMP=emscripten is not compatible with
+# -fwasm-exceptions"). Until rust-skia ships wasm-exception binaries, this crate builds with the
+# last toolchain that links against them.
+[toolchain]
+channel = "1.92.0"
+targets = ["wasm32-unknown-emscripten"]

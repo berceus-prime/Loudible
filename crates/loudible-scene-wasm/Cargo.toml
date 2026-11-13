@@ -1,0 +1,34 @@
+[package]
+name = "loudible-scene-wasm"
+version = "0.1.0"
+edition = "2024"
+
+# Detached from the app's workspace on purpose: `.cargo/config.toml` pins the emscripten target
+# and its link flags, which have no business reaching the app, and `cargo build --workspace`
+# must keep ignoring this crate.
+[workspace]
+
+# Emscripten links a `cdylib` as a side module, which is not loadable on its own, so the
+# wasm-bindgen exports have to come out of a binary with an empty `main`.
+[[bin]]
+name = "loudible_scene_wasm"
+path = "src/main.rs"
+
+[dependencies]
+js-sys = "0.3"
+loudible-scene = { path = "../loudible-scene" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+skia-safe = { version = "0.157", features = ["textlayout"] }
+wasm-bindgen = "0.2.130"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "CanvasRenderingContext2d",
+    "HtmlCanvasElement",
+    "ImageData",
+    "Performance",
+    "Window",
+    "console",
+]

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene playground</title>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+<header>
+  <h1>Scene playground</h1>
+  <label>View
+    <select id="view"></select>
+  </label>
+  <label>Scale
+    <select id="scale">
+      <option value="1">1x</option>
+      <option value="2" selected>2x</option>
+    </select>
+  </label>
+  <label class="check"><input type="checkbox" id="dark"> Dark</label>
+  <span id="status">loading…</span>
+</header>
+
+<main>
+  <section class="editors">
+    <label for="document">Document</label>
+    <textarea id="document" spellcheck="false"></textarea>
+    <label for="data">Data</label>
+    <textarea id="data" spellcheck="false"></textarea>
+  </section>
+
+  <section class="stage">
+    <div id="error" hidden></div>
+    <div class="canvas-wrap"><canvas id="canvas"></canvas></div>
+    <p id="hover">&nbsp;</p>
+  </section>
+</main>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

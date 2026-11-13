@@ -1,0 +1,3 @@
+target/
+# `just fonts` puts the system face here; nothing licensed gets committed.
+web/fonts/

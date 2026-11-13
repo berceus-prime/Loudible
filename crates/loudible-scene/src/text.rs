@@ -52,6 +52,8 @@ struct Key {
 /// Lays out and caches single lines; a frame redraws mostly the same strings.
 pub struct TextSystem {
     fonts: FontCollection,
+    /// The families a style asks for, in order, which the collection resolves.
+    families: Vec<String>,
     cache: RefCell<HashMap<Key, Paragraph>>,
 }
 
@@ -59,14 +61,21 @@ impl Default for TextSystem {
     fn default() -> Self {
         let mut fonts = FontCollection::new();
         fonts.set_default_font_manager(FontMgr::new(), None);
-        Self {
-            fonts,
-            cache: RefCell::new(HashMap::new()),
-        }
+        Self::with_fonts(fonts, FAMILIES.iter().map(|family| family.to_string()).collect())
     }
 }
 
 impl TextSystem {
+    /// A text system over a font collection the caller assembled, for a host that has no system
+    /// fonts to find: wasm, or a binary carrying its own face.
+    pub fn with_fonts(fonts: FontCollection, families: Vec<String>) -> Self {
+        Self {
+            fonts,
+            families,
+            cache: RefCell::new(HashMap::new()),
+        }
+    }
+
     fn with_line<R>(
         &self,
         text: &str,
@@ -96,7 +105,7 @@ impl TextSystem {
     /// With `limit`, the line is cut to that width with an ellipsis against the last kept letter.
     fn build(&self, text: &str, style: TextStyle, color: Color, limit: Option<f32>) -> Paragraph {
         let mut sk = SkTextStyle::new();
-        sk.set_font_families(FAMILIES);
+        sk.set_font_families(&self.families);
         sk.set_font_size(style.size);
         sk.set_font_style(FontStyle::new(
             SkWeight::from(style.weight as i32),

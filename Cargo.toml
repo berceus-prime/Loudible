@@ -8,6 +8,9 @@ members = [
     "crates/loudible-scene",
     "crates/loudible-test-support",
 ]
+# Its own workspace: it builds for wasm32-unknown-emscripten with link flags and a pinned
+# toolchain that have no business reaching the app.
+exclude = ["crates/loudible-scene-wasm"]
 resolver = "3"
 
 [workspace.package]

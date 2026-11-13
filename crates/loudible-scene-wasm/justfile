@@ -1,0 +1,37 @@
+# The emscripten SDK the skia-bindings build script reads; Homebrew's unless EMSDK says otherwise.
+export EMSDK := env("EMSDK", "/opt/homebrew/opt/emscripten/libexec")
+
+# List the recipes.
+default:
+    @just --list --unsorted
+
+# Build the module. `cargo build` is the whole build: emscripten runs wasm-bindgen itself.
+build *args:
+    cargo build {{ args }}
+
+# Build it small enough to serve: the debug module is ~30MB of wasm.
+build-release:
+    cargo build --release
+
+# Put the system UI face beside the page, where the playground fetches it from (gitignored).
+fonts:
+    cp /System/Library/Fonts/SFNS.ttf web/fonts/ui.ttf
+
+# Render every authored view through the built module under node, with a stand-in canvas.
+smoke:
+    node tests/smoke.mjs
+
+# The unit tests, which run on the host rather than in wasm.
+test:
+    cargo test --target "$(rustc -vV | sed -n 's/^host: //p')"
+
+# Serve `crates/` so one root reaches the built module, the page and `loudible-scene/scenes/`.
+serve:
+    #!/usr/bin/env python3
+    import functools, http.server, socketserver
+    http.server.SimpleHTTPRequestHandler.extensions_map[".wasm"] = "application/wasm"
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory="..")
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", 8000), handler) as server:
+        print("http://localhost:8000/loudible-scene-wasm/web/")
+        server.serve_forever()

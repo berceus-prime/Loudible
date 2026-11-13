@@ -1,0 +1,28 @@
+# From the wasm-bindgen guide's Emscripten page, plus rust-skia's own requirements.
+#
+# `rustc` links through emscripten; `-sWASM_BINDGEN` makes it find the marker section this crate
+# embeds and run the `wasm-bindgen` CLI as a post-link step, merging the generated bindings into
+# emscripten's own JavaScript. So `cargo build` is the whole build: no separate bindgen or
+# wasm-opt pass. The CLI has to be on PATH at exactly the `wasm-bindgen` version in Cargo.lock,
+# because emscripten calls it by name, and `EMSDK` has to point at the SDK: see the justfile.
+
+[build]
+target = "wasm32-unknown-emscripten"
+
+[target.wasm32-unknown-emscripten]
+# em++ rather than emcc, because Skia and ICU are C++ and the link needs their runtime.
+linker = "em++"
+rustflags = [
+  # No PIC: this is a static main module.
+  "-Crelocation-model=static",
+  "-Clink-arg=-sWASM_BINDGEN",
+  "-Clink-arg=-Wno-experimental",
+  "-Clink-arg=-sMODULARIZE",
+  "-Clink-arg=-sEXPORT_ES6",
+  # Skia wants room, and a 2x window is a few megabytes of pixels on its own.
+  "-Clink-arg=-sALLOW_MEMORY_GROWTH",
+  # Emscripten's 64KB default overflows while serde walks a deep scene tree.
+  "-Clink-arg=-sSTACK_SIZE=8MB",
+  # rust-skia's workaround for emscripten newer than 2.0.9.
+  "-Clink-arg=-sERROR_ON_UNDEFINED_SYMBOLS=0",
+]
